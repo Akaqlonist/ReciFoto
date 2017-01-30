@@ -8,6 +8,7 @@
 
 import UIKit
 import CoreData
+import UserNotifications
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -17,6 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        UIApplication.shared.registerForRemoteNotifications()
         return true
     }
 
@@ -43,9 +45,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Saves changes in the application's managed object context before the application terminates.
         self.saveContext()
     }
-
+    // MARK: - Utilization
+    func changeRootViewController(with identifier:String!) {
+        let storyboard = self.window?.rootViewController?.storyboard
+        let desiredViewController = storyboard?.instantiateViewController(withIdentifier: identifier);
+        
+        let snapshot:UIView = (self.window?.snapshotView(afterScreenUpdates: true))!
+        desiredViewController?.view.addSubview(snapshot);
+        
+        self.window?.rootViewController = desiredViewController;
+        
+        UIView.animate(withDuration: 0.3, animations: {() in
+            snapshot.layer.opacity = 0;
+            snapshot.layer.transform = CATransform3DMakeScale(1.5, 1.5, 1.5);
+        }, completion: {
+            (value: Bool) in
+            snapshot.removeFromSuperview();
+        });
+    }
     // MARK: - Core Data stack
-
+    
     lazy var persistentContainer: NSPersistentContainer = {
         /*
          The persistent container for the application. This implementation
@@ -88,6 +107,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
     }
-
+    // MARK: - Push Notification Registration
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        var token = ""
+        for i in 0..<deviceToken.count {
+            token = token + String(format: "%02.2hhx", arguments: [deviceToken[i]])
+        }
+        Profile.device_token = token
+    }
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("Failed to register:", error)
+    }
 }
 
