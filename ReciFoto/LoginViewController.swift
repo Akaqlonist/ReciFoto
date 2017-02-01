@@ -33,7 +33,7 @@ class LoginViewController: UIViewController {
         let alertController = UIAlertController(title: "ReciFoto", message: "", preferredStyle: UIAlertControllerStyle.alert)
         alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
         
-        if (txtUsername.text?.isEmpty)! || !isValidEmailString(){
+        if (txtUsername.text?.isEmpty)! || !isValidUsernameString(){
             alertController.message = "Please input valid Username or Email"
             self.present(alertController, animated: true, completion: {
                 self.txtUsername.becomeFirstResponder()
@@ -69,7 +69,7 @@ class LoginViewController: UIViewController {
         }
     }
     func isValidUsernameString() -> Bool {
-        let characterset = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLKMNOPQRSTUVWXYZ0123456789")
+        let characterset = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLKMNOPQRSTUVWXYZ0123456789@.")
         if txtUsername.text?.rangeOfCharacter(from: characterset.inverted) != nil {
             return false
         }else{
@@ -87,13 +87,29 @@ class LoginViewController: UIViewController {
             do{
                 let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
                 print(jsonResponse)
-                Profile.user_id = jsonResponse["user_id"] as! Int
-                Profile.session_id = jsonResponse["session_id"] as! String
+                
+                let result = jsonResponse["result"] as! [String : AnyObject]
+                
+                Profile.user_id = result["user_id"] as! String
+                Profile.session_id = result["session_id"] as! String
+                Profile.user_email = result["user_email"] as! String
+                Profile.user_name = result["user_name"] as! String
+                let userProfile = result["profile"] as! [String : AnyObject]
+                if let user_bio = userProfile["bio"] as? String{
+                    Profile.user_bio = user_bio
+                }else{
+                    Profile.user_bio = ""
+                }
+                if let user_picture = userProfile["picture"] as? String{
+                    Profile.user_picture = user_picture
+                }else{
+                    Profile.user_picture = ""
+                }
                 
                 let appDelegate = UIApplication.shared.delegate as! AppDelegate
                 appDelegate.changeRootViewController(with: "mainNavigationVC")
             }catch{
-                print("Error Parsing JSON from register_user_v2")
+                print("Error Parsing JSON from login_user_v2")
             }
             
         })

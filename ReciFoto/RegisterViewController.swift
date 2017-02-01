@@ -112,7 +112,7 @@ class RegisterViewController: UIViewController, UITextFieldDelegate {
             do{
                 let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
                 print(jsonResponse)
-                Profile.user_id = jsonResponse["user_id"] as! Int
+                Profile.user_id = jsonResponse["user_id"] as! String
                 Profile.session_id = jsonResponse["session_id"] as! String
                 
                 let appDelegate = UIApplication.shared.delegate as! AppDelegate
