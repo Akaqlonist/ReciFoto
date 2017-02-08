@@ -53,9 +53,6 @@ class LoginViewController: UIViewController {
         }
     }
     func isValidEmailString() -> Bool {
-        //        let regEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}"
-        //        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", regEx)
-        //        return emailPredicate.evaluate(with: txtEmail.text)
         let characterset = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLKMNOPQRSTUVWXYZ0123456789@.")
         if txtUsername.text?.rangeOfCharacter(from: characterset.inverted) != nil {
             return false
@@ -87,27 +84,37 @@ class LoginViewController: UIViewController {
             do{
                 let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
                 print(jsonResponse)
-                
-                let result = jsonResponse["result"] as! [String : AnyObject]
-                
-                Profile.user_id = result["user_id"] as! String
-                Profile.session_id = result["session_id"] as! String
-                Profile.user_email = result["user_email"] as! String
-                Profile.user_name = result["user_name"] as! String
-                let userProfile = result["profile"] as! [String : AnyObject]
-                if let user_bio = userProfile["bio"] as? String{
-                    Profile.user_bio = user_bio
-                }else{
-                    Profile.user_bio = ""
+                let status = jsonResponse[Constants.STATUS_KEY] as! String
+                if status == "1"{
+                    let result = jsonResponse[Constants.RESULT_KEY] as! [String : AnyObject]
+                    
+                    Profile.user_id = result[Constants.USER_ID_KEY] as! String
+                    Profile.session_id = result[Constants.USER_SESSION_KEY] as! String
+                    Profile.user_email = result[Constants.USER_EMAIL_KEY] as! String
+                    Profile.user_name = result[Constants.USER_NAME_KEY] as! String
+                    let userProfile = result[Constants.PROFILE_KEY] as! [String : AnyObject]
+                    if let user_bio = userProfile[Constants.USER_BIO_KEY] as? String{
+                        Profile.user_bio = user_bio
+                    }else{
+                        Profile.user_bio = ""
+                    }
+                    if let user_picture = userProfile[Constants.PICTURE_KEY] as? String{
+                        Profile.user_picture = user_picture
+                    }else{
+                        Profile.user_picture = ""
+                    }
+                    
+                    let appDelegate = UIApplication.shared.delegate as! AppDelegate
+                    
+                    appDelegate.setHasLoginInfo()
+                    appDelegate.saveToUserDefaults()
+                    
+                    appDelegate.changeRootViewController(with: "mainNavigationVC")
+                }else {
+                    let alertController = UIAlertController(title: "ReciFoto", message: jsonResponse[Constants.MESSAGE_KEY] as? String, preferredStyle: UIAlertControllerStyle.alert)
+                    alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+                    self.present(alertController, animated: true, completion: nil)
                 }
-                if let user_picture = userProfile["picture"] as? String{
-                    Profile.user_picture = user_picture
-                }else{
-                    Profile.user_picture = ""
-                }
-                
-                let appDelegate = UIApplication.shared.delegate as! AppDelegate
-                appDelegate.changeRootViewController(with: "mainNavigationVC")
             }catch{
                 print("Error Parsing JSON from login_user_v2")
             }

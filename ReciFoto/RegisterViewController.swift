@@ -112,11 +112,16 @@ class RegisterViewController: UIViewController, UITextFieldDelegate {
             do{
                 let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
                 print(jsonResponse)
-                Profile.user_id = jsonResponse["user_id"] as! String
-                Profile.session_id = jsonResponse["session_id"] as! String
+                let status = jsonResponse[Constants.STATUS_KEY] as! Int
+                if status == 1{
+                    Profile.user_id = jsonResponse[Constants.USER_ID_KEY] as! String
+                    Profile.session_id = jsonResponse[Constants.USER_SESSION_KEY] as! String
                 
-                let appDelegate = UIApplication.shared.delegate as! AppDelegate
-                appDelegate.changeRootViewController(with: "mainNavigationVC")
+                    let appDelegate = UIApplication.shared.delegate as! AppDelegate
+                    appDelegate.changeRootViewController(with: "mainNavigationVC")
+                }else{
+                    
+                }
             }catch{
                 print("Error Parsing JSON from register_user_v2")
             }

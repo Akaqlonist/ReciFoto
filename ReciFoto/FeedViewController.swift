@@ -9,9 +9,10 @@
 import UIKit
 class FeedViewController: UITableViewController {
     
-    var feedList: [[DGFeedItem]] = []
-    var jsonData: [DGFeedItem] = []
+    var feedList: [DGFeedItem] = []
+    var currentIndex = 0
     
+    @IBOutlet weak var lblNoRecipePost: UILabel!
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -21,109 +22,67 @@ class FeedViewController: UITableViewController {
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         // self.navigationItem.rightBarButtonItem = self.editButtonItem()
         
+        //Set Title
+        self.tabBarController?.navigationItem.title = "Public Recipe List"
+        loadFromServer()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
+    func loadFromServer(){
+        if feedAPIByIndex(index: currentIndex) == 1{
+            
+        }else{
+            
+        }
+    }
+    func feedAPIByIndex(index: Int) -> Int{
+        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.getFeedByIndex),
+                                 method: .post, parameters: ["user_id" : Profile.user_id,
+                                                             "session_id" : Profile.session_id,
+                                                             "index" : index])
+        
+        apiRequest.responseString(completionHandler: { response in
+            do{
+                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
+                let status = jsonResponse[Constants.STATUS_KEY] as! String
+                
+                if status == "1"{
+                    let result = jsonResponse[Constants.RESULT_KEY] as! [AnyObject]
+                    if result.count > 0 {
+                        for recipe in result {
+                            self.feedList.append(DGFeedItem(dict: recipe as! NSDictionary))
+                        }
+                        self.tableView.reloadData()
+                    }else{
+                        self.lblNoRecipePost.isHidden = false
+                    }
+                }else {
+                    let alertController = UIAlertController(title: "ReciFoto", message: jsonResponse["message"] as? String, preferredStyle: UIAlertControllerStyle.alert)
+                    alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+                    self.present(alertController, animated: true, completion: nil)
+                }
+            }catch{
+                print("Error Parsing JSON from get_feed_by_index")
+            }
+            
+        })
+        
+        return 1
+    }
     // MARK: - Table view data source
-    func randomItem() -> DGFeedItem {
-        let randomNumber: Int = Int(arc4random_uniform(UInt32(self.jsonData.count)))
-        var item: DGFeedItem = self.jsonData[randomNumber]
-        countDGFeedItemIdentifier += 1
-        item.identifier = "unique-id-\(countDGFeedItemIdentifier)"
-        return item
-    }
-    
-    func inserRow() {
-        if self.feedList.count == 0 {
-            self.insertSection()
-        } else {
-            self.feedList[0].insert(self.randomItem(), at: 0)
-            let indexPath: IndexPath = IndexPath(row: 0, section: 0)
-            self.tableView.insertRows(at: [indexPath], with: UITableViewRowAnimation.automatic)
-        }
-    }
-    
-    func insertSection() {
-        self.feedList.insert([self.randomItem()], at: 0)
-        self.tableView.insertSections(IndexSet(integer: 0), with: UITableViewRowAnimation.automatic)
-    }
-    
-    func deleteSection() {
-        if self.feedList.count > 0 {
-            self.feedList.remove(at: 0)
-            self.tableView.deleteSections(IndexSet(integer: 0), with: UITableViewRowAnimation.automatic)
-        }
-    }
-    
-    func insertRowsAtIndexPaths() {
-        // demo 以section 0 为例子
-        let section = 0
-        if self.feedList.count == 0 {
-            self.feedList.append([])
-        }
-        let lastIndex = self.feedList[section].count
-        let insertItems = [self.randomItem(), self.randomItem(), self.randomItem(), self.randomItem(), self.randomItem()]
-        for item in insertItems {
-            self.feedList[section].append(item)
-        }
-        
-        var indexPaths: [IndexPath] = []
-        for index in 0..<insertItems.count {
-            indexPaths.append(IndexPath(row: lastIndex + index, section: section))
-        }
-        
-        self.tableView.beginUpdates()
-        if self.tableView.numberOfSections < section + 1 {
-            self.tableView.insertSections(IndexSet(integer: section), with: .automatic)
-        } else {
-            self.tableView.insertRows(at: indexPaths, with: .automatic)
-        }
-        self.tableView.endUpdates()
-    }
-    
-    func deleteRowsAtIndexPaths() {
-        // demo 以section 0 为例子
-        let section = 0
-        guard self.feedList.count > section + 1 && self.feedList[section].count > 0 else { return }
-        
-        let row = self.feedList[section].count - 1
-        let indexPath = IndexPath(row: row, section: section)
-        self.feedList[section].removeLast()
-        
-        guard self.tableView.numberOfSections > section + 1 else { return }
-        
-        self.tableView.beginUpdates()
-        if self.tableView.numberOfRows(inSection: section) > 1 {
-            self.tableView.deleteRows(at: [indexPath], with: .automatic)
-        } else {
-            self.feedList.remove(at: section)
-            self.tableView.deleteSections(IndexSet(integer: section), with: .automatic)
-        }
-        self.tableView.endUpdates()
-    }
-    override func numberOfSections(in tableView: UITableView) -> Int {
-        // #warning Incomplete implementation, return the number of sections
-        return self.feedList.count
-    }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return self.feedList[section].count
+        return self.feedList.count
     }
 
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell: DGFeedCell = tableView.dequeueReusableCell(withIdentifier: "DGFeedCell", for: indexPath) as! DGFeedCell
-        if indexPath.row % 2 == 0 {
-            cell.accessoryType = UITableViewCellAccessoryType.disclosureIndicator
-        } else {
-            cell.accessoryType = UITableViewCellAccessoryType.checkmark
-        }
-        cell.loadData(self.feedList[indexPath.section][indexPath.row])
+        cell.loadData(self.feedList[indexPath.row])
         cell.setNeedsUpdateConstraints()
         cell.updateConstraintsIfNeeded()
         return cell 
@@ -176,12 +135,4 @@ class FeedViewController: UITableViewController {
     */
 
 }
-extension FeedViewController{
-    
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == UITableViewCellEditingStyle.delete {
-            self.feedList[indexPath.section].remove(at: indexPath.row)
-            self.tableView.deleteRows(at: [indexPath], with: UITableViewRowAnimation.automatic)
-        }
-    }
-}
+

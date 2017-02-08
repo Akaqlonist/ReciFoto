@@ -14,6 +14,7 @@ class CameraViewController: UIViewController {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
+        self.tabBarController?.navigationItem.title = "Add a Recipe"
     }
 
     override func didReceiveMemoryWarning() {
