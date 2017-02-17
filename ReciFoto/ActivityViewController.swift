@@ -16,28 +16,78 @@ class ActivityViewController: UITableViewController {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
-        self.tabBarController?.navigationItem.title = "My Recipes"
-        loadFromServer()
+        self.navigationItem.title = "My Recipes"
+        
+        let settingButton = UIBarButtonItem(barButtonSystemItem: .bookmarks, target: self, action: #selector(ActivityViewController.collectionAction))
+        self.navigationItem.rightBarButtonItem = settingButton
+        
+        var header: ESRefreshProtocol & ESRefreshAnimatorProtocol
+        var footer: ESRefreshProtocol & ESRefreshAnimatorProtocol
+        
+        header = ESRefreshHeaderAnimator.init(frame: CGRect.zero)
+        footer = ESRefreshFooterAnimator.init(frame: CGRect.zero)
+        self.tableView.es_addPullToRefresh(animator: header) { [weak self] in
+            self?.refreshActivity()
+        }
+        self.tableView.es_addInfiniteScrolling(animator: footer) { [weak self] in
+            self?.loadMore()
+        }
+        self.tableView.refreshIdentifier = String.init(describing: "default")
+        self.tableView.expriedTimeInterval = 20.0
+        
+        self.tableView.es_startPullToRefresh()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
-    func loadFromServer(){
-        if feedAPIByIndex(index: currentIndex) == 1{
-            
-        }else{
-            
+    func collectionAction(){
+        if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "myCollectionVC") as? MyCollectionViewController {
+            if let navigator = navigationController {
+                navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+                navigator.pushViewController(viewController, animated: true)
+            }
         }
     }
-    func feedAPIByIndex(index: Int) -> Int{
+    private func refreshActivity() {
+        DispatchQueue.main.asyncAfter(deadline: .now()) {
+            self.feedList.removeAll()
+            self.currentIndex = 0
+            self.feedAPIByIndex(index: self.currentIndex, didFinishedWithResult: { count in
+                if count > 0 {
+                    self.tableView.reloadData()
+                }else{
+                    
+                }
+                self.tableView.es_stopPullToRefresh()
+            })
+        }
+    }
+    
+    private func loadMore() {
+        DispatchQueue.main.asyncAfter(deadline: .now()) {
+            if self.currentIndex < 100{
+                self.currentIndex += 10
+                self.feedAPIByIndex(index: self.currentIndex, didFinishedWithResult: { count in
+                    if count > 0 {
+                        self.tableView.reloadData()
+                    }else{
+                        
+                    }
+                })
+                self.tableView.es_stopLoadingMore()
+            }else{
+                self.tableView.es_noticeNoMoreData()
+            }
+        }
+    }
+    func feedAPIByIndex(index: Int, didFinishedWithResult: @escaping(Int) -> Void) -> Void{
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.getUserRecipesV2),
-                                 method: .post, parameters: ["user_id" : Profile.user_id,
-                                                             "session_id" : Profile.session_id,
-                                                             "user_name": Profile.user_name,
-                                                             "index" : index])
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
+                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                                             Constants.USER_NAME_KEY: Profile.user_name,
+                                                             Constants.INDEX_KEY : index])
         
         apiRequest.responseString(completionHandler: { response in
             do{
@@ -50,22 +100,22 @@ class ActivityViewController: UITableViewController {
                         for recipe in result {
                             self.feedList.append(DGFeedItem(dict: recipe as! NSDictionary))
                         }
-                        self.tableView.reloadData()
                     }else{
 //                        self.lblNoRecipePost.isHidden = false
                     }
+                     didFinishedWithResult(result.count)
                 }else {
+                     didFinishedWithResult(0)
                     let alertController = UIAlertController(title: "ReciFoto", message: jsonResponse["message"] as? String, preferredStyle: UIAlertControllerStyle.alert)
                     alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
                     self.present(alertController, animated: true, completion: nil)
                 }
             }catch{
+                 didFinishedWithResult(0)
                 print("Error Parsing JSON from get_feed_by_index")
             }
             
         })
-        
-        return 1
     }
     // MARK: - Table view data source
     
@@ -77,6 +127,7 @@ class ActivityViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell: DGFeedCell = tableView.dequeueReusableCell(withIdentifier: "DGFeedCell", for: indexPath) as! DGFeedCell
+        cell.delegate = self
         cell.loadData(self.feedList[indexPath.row])
         cell.setNeedsUpdateConstraints()
         cell.updateConstraintsIfNeeded()
@@ -92,4 +143,68 @@ class ActivityViewController: UITableViewController {
     }
     */
 
+}
+extension ActivityViewController : DGFeedCellDelegaete{
+
+    func didLikeWithItem(item: DGFeedItem) {
+        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.recipeLikeV2),
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
+                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                                             Constants.RECIPE_ID_KEY : item.identifier])
+        
+        apiRequest.responseString(completionHandler: { response in
+            do{
+                print(response)
+                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
+                let status = jsonResponse[Constants.STATUS_KEY] as! String
+                
+                if status == "1"{
+                    print(jsonResponse)
+                }else {
+                    
+                }
+            }catch{
+                print("Error Parsing JSON from recipe_like")
+            }
+            
+        })
+        
+    }
+    func didMoreWithItem(item: DGFeedItem) {
+        let actionSheetController = UIAlertController(title: "ReciFoto", message: "", preferredStyle: .actionSheet)
+        
+        let cancelActionButton = UIAlertAction(title: "Cancel", style: .cancel) { action -> Void in
+            print("Cancel")
+        }
+        actionSheetController.addAction(cancelActionButton)
+        
+        let saveActionButton = UIAlertAction(title: "Save to Collection", style: .default) { action -> Void in
+            print("Save")
+        }
+        actionSheetController.addAction(saveActionButton)
+        
+        let reportActionButton = UIAlertAction(title: "Report Inappropriate", style: .default) { action -> Void in
+            print("Report Inappropriate")
+        }
+        actionSheetController.addAction(reportActionButton)
+        
+        self.present(actionSheetController, animated: true, completion: nil)
+        
+    }
+    func didCommentWithItem(item: DGFeedItem) {
+        if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "commentsVC") as? CommentsViewController {
+            if let navigator = navigationController {
+                navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+                navigator.pushViewController(viewController, animated: true)
+            }
+        }
+    }
+    func didProfileWithItem(item: DGFeedItem) {
+        if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "profileVC") as? ProfileViewController {
+            if let navigator = navigationController {
+                navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+                navigator.pushViewController(viewController, animated: true)
+            }
+        }
+    }
 }

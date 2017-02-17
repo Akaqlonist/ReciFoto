@@ -8,7 +8,7 @@
 
 import UIKit
 
-class LoginViewController: UIViewController {
+class LoginViewController: UIViewController, UITextFieldDelegate {
 
     @IBOutlet weak var txtUsername: UITextField!
     @IBOutlet weak var txtPassword: UITextField!
@@ -83,7 +83,6 @@ class LoginViewController: UIViewController {
         apiRequest.responseString(completionHandler: { response in
             do{
                 let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                print(jsonResponse)
                 let status = jsonResponse[Constants.STATUS_KEY] as! String
                 if status == "1"{
                     let result = jsonResponse[Constants.RESULT_KEY] as! [String : AnyObject]
@@ -106,10 +105,10 @@ class LoginViewController: UIViewController {
                     
                     let appDelegate = UIApplication.shared.delegate as! AppDelegate
                     
-                    appDelegate.setHasLoginInfo()
+                    appDelegate.setHasLoginInfo(status: true)
                     appDelegate.saveToUserDefaults()
                     
-                    appDelegate.changeRootViewController(with: "mainNavigationVC")
+                    appDelegate.changeRootViewController(with: "mainTabVC")
                 }else {
                     let alertController = UIAlertController(title: "ReciFoto", message: jsonResponse[Constants.MESSAGE_KEY] as? String, preferredStyle: UIAlertControllerStyle.alert)
                     alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
@@ -140,6 +139,13 @@ class LoginViewController: UIViewController {
                 self.view.frame.origin.y += keyboardSize.height
             }
         }
+    }
+    ///////////////////////////////////////////////////////////////
+    //UITextFieldDelegate Method
+    ///////////////////////////////////////////////////////////////
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
     }
     /*
     // MARK: - Navigation

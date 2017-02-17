@@ -8,6 +8,12 @@
 
 import UIKit
 
+protocol DGFeedCellDelegaete {
+    func didLikeWithItem(item : DGFeedItem)
+    func didMoreWithItem(item : DGFeedItem)
+    func didCommentWithItem(item : DGFeedItem)
+    func didProfileWithItem(item : DGFeedItem)
+}
 class DGFeedCell: UITableViewCell {
 
     @IBOutlet weak var titleLabel: UILabel!
@@ -17,6 +23,8 @@ class DGFeedCell: UITableViewCell {
     @IBOutlet weak var avatarImageView: UIImageView!
     @IBOutlet weak var lblLikes: UILabel!
     @IBOutlet weak var lblComments: UILabel!
+    var recipeItem : DGFeedItem?
+    var delegate : DGFeedCellDelegaete?
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -24,6 +32,7 @@ class DGFeedCell: UITableViewCell {
     }
 
     func loadData(_ item: DGFeedItem) {
+        recipeItem = item
         self.titleLabel.text = item.title
         if item.imageURL.characters.count > 0 {
             let size = contentImageView.frame.size
@@ -61,11 +70,18 @@ class DGFeedCell: UITableViewCell {
         self.lblComments.text = String(format: "%d",item.comment_count)
     }
     @IBAction func likeAction(_ sender: Any) {
+        self.delegate?.didLikeWithItem(item: self.recipeItem!)
     }
     @IBAction func commentAction(_ sender: Any) {
+        self.delegate?.didCommentWithItem(item: self.recipeItem!)
     }
-    @IBAction func reportAction(_ sender: Any) {
+    @IBAction func moreAction(_ sender: Any) {
+        self.delegate?.didMoreWithItem(item: self.recipeItem!)
     }
+    @IBAction func profileAction(_ sender: Any) {
+        self.delegate?.didProfileWithItem(item: self.recipeItem!)
+    }
+    
     
 
     // If you are not using auto layout, override this method, enable it by setting

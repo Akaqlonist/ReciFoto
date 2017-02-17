@@ -24,6 +24,8 @@ internal final class TextCollectionViewCell: UICollectionViewCell {
     
     internal var label: UILabel!
     
+    internal var imageView: UIImageView!
+    
     // MARK: - Object Lifecycle
     
     internal override init(frame: CGRect) {
@@ -31,10 +33,12 @@ internal final class TextCollectionViewCell: UICollectionViewCell {
         super.init(frame: frame)
         
         self.colorView = UIView()
+        self.imageView = UIImageView()
         self.label = UILabel()
         self.label.lineBreakMode = .byWordWrapping // or NSLineBreakMode.ByWordWrapping
         self.label.numberOfLines = 0
         
+        self.contentView.addSubview(self.imageView)
         self.contentView.addSubview(self.colorView)
         self.contentView.addSubview(self.label)
     }
@@ -51,6 +55,7 @@ internal final class TextCollectionViewCell: UICollectionViewCell {
         super.layoutSubviews()
         
         self.colorView.frame = CGRect(origin: CGPoint.zero, size: self.contentView.bounds.size)
+        self.imageView.frame = CGRect(origin: CGPoint.zero, size: self.contentView.bounds.size)
         self.label.frame = CGRect(origin: CGPoint.zero, size: self.contentView.bounds.size)
     }
     

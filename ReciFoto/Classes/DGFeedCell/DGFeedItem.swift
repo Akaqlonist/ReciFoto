@@ -30,7 +30,12 @@ struct DGFeedItem {
         identifier = recipe[Constants.RECIPE_ID_KEY] as! String
         title = recipe[Constants.RECIPE_TITLE_KEY] as! String
         userName = recipe[Constants.USER_NAME_KEY] as! String
-        time = (recipe[Constants.TIME_ELAPSED_KEY] as! NSString).integerValue
+        if let time_elapsed = recipe[Constants.TIME_ELAPSED_KEY] as? NSString {
+            time = time_elapsed.integerValue
+        }else{
+            time = 0
+        }
+        
         imageURL = recipe[Constants.RECIPE_IMAGE_KEY] as! String
         user_id = recipe[Constants.USER_ID_KEY] as! String
         recipe_website = recipe[Constants.RECIPE_WEBSITE_KEY] as! String

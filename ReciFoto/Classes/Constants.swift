@@ -10,7 +10,7 @@ struct Constants{
     
     //API Level
     static let API_URL_DEVELOPMENT = "http://192.168.1.136/recifoto/index.php/api/"
-    static let API_URL_PRODUCTION = "http://www.recifoto.com/api/"
+//    static let API_URL_DEVELOPMENT = "http://www.recifoto.com/api/"
     static let registerURL = "register_user"
     static let registerURLV2 = "register_user_v2"
     static let loginURL = "login_user"
@@ -19,6 +19,14 @@ struct Constants{
     static let getUserRecipesV2 = "get_user_recipesV2"
     static let getProfileV2 = "get_profileV2"
     static let getTrendsV2 = "get_trendsV2"
+    static let upload_recipeV2 = "upload_recipeV2"
+    static let recipeSearchV2 = "recipe_searchV2"
+    static let recipeLikeV2 = "recipe_likeV2"
+    static let reportInappropriate = "report_inappropriate"
+    static let saveCollection = "save_collection"
+    static let getCommentsByIndexV2 = "getCommentsByIndexV2"
+    static let addComment = "addComment"
+    static let getCollectionByIndex = "get_collection_by_index"
     
     //Static Keys
     static let USER_EMAIL_KEY = "user_email"
@@ -52,4 +60,9 @@ struct Constants{
     static let RECIPE_COUNT_KEY = "recipe_count"
     static let FOLLOWING_KEY = "following"
     static let IS_FOLLOW_KEY = "is_follow"
+    static let CONTACT_WEBSITE_KEY = "contact_website"
+    static let INDEX_KEY = "index"
+    static let SEARCH_KEY = "search_key"
+    static let TOUSERID_KEY = "toUserId"
+
 }

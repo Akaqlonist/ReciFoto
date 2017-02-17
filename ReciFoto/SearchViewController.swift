@@ -7,24 +7,29 @@
 //
 
 import UIKit
-
+public enum SearchMode: String {
+    case trends = "trends"
+    case search = "search"
+}
 class SearchViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UISearchBarDelegate {
 
+    @IBOutlet weak var lblNoResult: UILabel!
     @IBOutlet weak var collectionView: UICollectionView!
     var currentIndex = 0
+    var currentMode : SearchMode = .trends
     fileprivate let colors = [
-        UIColor(red: 81     / 255.0,    green: 81      / 255.0,     blue: 79       / 255.0,     alpha: 1.0),
-        UIColor(red: 242    / 255.0,    green: 94      / 255.0,     blue: 92       / 255.0,     alpha: 1.0),
-        UIColor(red: 242    / 255.0,    green: 167     / 255.0,     blue: 92       / 255.0,     alpha: 1.0),
-        UIColor(red: 229    / 255.0,    green: 201     / 255.0,     blue: 91       / 255.0,     alpha: 1.0),
-        UIColor(red: 35     / 255.0,    green: 123     / 255.0,     blue: 160      / 255.0,     alpha: 1.0),
-        UIColor(red: 81     / 255.0,    green: 81      / 255.0,     blue: 79       / 255.0,     alpha: 1.0),
-        UIColor(red: 242    / 255.0,    green: 94      / 255.0,     blue: 92       / 255.0,     alpha: 1.0),
-        UIColor(red: 242    / 255.0,    green: 167     / 255.0,     blue: 92       / 255.0,     alpha: 1.0),
-        UIColor(red: 229    / 255.0,    green: 201     / 255.0,     blue: 91       / 255.0,     alpha: 1.0),
-        UIColor(red: 35     / 255.0,    green: 123     / 255.0,     blue: 160      / 255.0,     alpha: 1.0),
-        UIColor(red: 81     / 255.0,    green: 81      / 255.0,     blue: 79       / 255.0,     alpha: 1.0),
-        UIColor(red: 242    / 255.0,    green: 94      / 255.0,     blue: 92       / 255.0,     alpha: 1.0)
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 20       / 255.0,     alpha: 1.0),
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 40       / 255.0,     alpha: 1.0),
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 60       / 255.0,     alpha: 1.0),
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 80       / 255.0,     alpha: 1.0),
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 100       / 255.0,     alpha: 1.0),
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 120       / 255.0,     alpha: 1.0),
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 140       / 255.0,     alpha: 1.0),
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 160       / 255.0,     alpha: 1.0),
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 180       / 255.0,     alpha: 1.0),
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 200       / 255.0,     alpha: 1.0),
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 220       / 255.0,     alpha: 1.0),
+        UIColor(red: 140     / 255.0,    green: 198      / 255.0,     blue: 240       / 255.0,     alpha: 1.0),
     ]
     
     fileprivate var filteredNames: [AnyObject] = []
@@ -37,7 +42,7 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
-        self.tabBarController?.navigationItem.title = "Search"
+        self.navigationItem.title = "Search"
         self.filteredNames = self.names
         
         self.collectionView.register(SearchCollectionViewCell.self, forCellWithReuseIdentifier: "SearchCollectionViewCell.identifier")
@@ -47,23 +52,36 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
             
             collectionViewLayout.firstItemRetractableAreaInset = UIEdgeInsets(top: 8.0, left: 0.0, bottom: 8.0, right: 0.0)
         }
-        if trendsAPI() == 1{
-            
-        }else{
-            
+        self.lblNoResult.isHidden = true
+        self.collectionView.es_addPullToRefresh {
+            self.trendsAPI(didFinishedWithResult: { count in
+                self.collectionView.es_stopPullToRefresh()
+                if count > 0 {
+                    self.collectionView.reloadData()
+                }else{
+                    self.lblNoResult.isHidden = false
+                }
+            })
         }
+        self.collectionView.es_startPullToRefresh()
+        self.collectionView.es_addInfiniteScrolling {
+        
+        }
+        
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
     
-    func trendsAPI() -> Int{
+    func trendsAPI(didFinishedWithResult: @escaping(Int) -> Void){
+        self.currentMode = .trends
+        self.lblNoResult.isHidden = true
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.getTrendsV2),
-                                 method: .post, parameters: ["user_id" : Profile.user_id,
-                                                             "session_id" : Profile.session_id,
-                                                             "index" : index])
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
+                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                                             Constants.INDEX_KEY : index])
         
         apiRequest.responseString(completionHandler: { response in
             do{
@@ -75,23 +93,59 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
                     if result.count > 0 {
                         self.names = result
                         self.filteredNames = self.names
-                        
-                        self.collectionView.reloadData()
                     }else{
-                        
+                        self.lblNoResult.isHidden = false
                     }
+                    didFinishedWithResult(result.count)
                 }else {
+                    didFinishedWithResult(0)
                     let alertController = UIAlertController(title: "ReciFoto", message: jsonResponse["message"] as? String, preferredStyle: UIAlertControllerStyle.alert)
                     alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
                     self.present(alertController, animated: true, completion: nil)
                 }
             }catch{
-                print("Error Parsing JSON from get_feed_by_index")
+                didFinishedWithResult(0)
+                print("Error Parsing JSON from get_trends")
             }
             
         })
+    }
+    func searchAPI(searchKey: String,  didFinishedWithResult: @escaping(Int) -> Void){
+        self.currentMode = .search
+        self.lblNoResult.isHidden = true
+        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.recipeSearchV2),
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
+                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                                             Constants.SEARCH_KEY : searchKey,
+                                                             Constants.INDEX_KEY : index])
         
-        return 1
+        apiRequest.responseString(completionHandler: { response in
+            do{
+                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
+                let status = jsonResponse[Constants.STATUS_KEY] as! String
+                
+                if status == "1"{
+                    let result = jsonResponse[Constants.RESULT_KEY] as! [AnyObject]
+                    print(result)
+                    if result.count > 0 {
+                        self.names = result
+                        self.filteredNames = self.names
+                    }else{
+                        self.lblNoResult.isHidden = false
+                    }
+                    didFinishedWithResult(result.count)
+                }else {
+                    didFinishedWithResult(0)
+                    let alertController = UIAlertController(title: "ReciFoto", message: jsonResponse["message"] as? String, preferredStyle: UIAlertControllerStyle.alert)
+                    alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+                    self.present(alertController, animated: true, completion: nil)
+                }
+            }catch{
+                didFinishedWithResult(0)
+                print("Error Parsing JSON from get_search")
+            }
+            
+        })
     }
     // MARK: - Layout
     
@@ -127,18 +181,53 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
             
         case 1:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "TextCollectionViewCell.identifier", for: indexPath) as! TextCollectionViewCell
-            
             let name = self.filteredNames[indexPath.item] as! [String : String]
-            
-            cell.colorView.layer.cornerRadius = 10.0
-            cell.colorView.layer.masksToBounds = true
-            cell.colorView.backgroundColor = self.colors[indexPath.item]
-            
-            cell.label.textColor = UIColor.white
-            cell.label.textAlignment = .center
-            cell.label.text = name[Constants.RECIPE_TITLE_KEY]
+            if currentMode == .trends {
+                cell.colorView.alpha = 1
+                cell.imageView.alpha = 0
+                
+                cell.colorView.layer.cornerRadius = 10.0
+                cell.colorView.layer.masksToBounds = true
+                cell.colorView.backgroundColor = self.colors[indexPath.item]
+                
+                cell.label.textColor = UIColor.white
+                cell.label.textAlignment = .center
+                cell.label.text = name[Constants.RECIPE_TITLE_KEY]
+            }else{
+                cell.imageView.alpha = 0
+                cell.colorView.alpha = 1
+                
+                cell.imageView.layer.cornerRadius = 10.0
+                cell.imageView.layer.masksToBounds = true
+                cell.imageView.af_setImage(withURL: URL(string: (name[Constants.RECIPE_IMAGE_KEY]?.replacingOccurrences(of: " ", with: "%20"))!)!)
+                
+                cell.label.textColor = UIColor.white
+                cell.label.textAlignment = .center
+                cell.label.text = name[Constants.RECIPE_TITLE_KEY]
+            }
             
             return cell
+            
+        default:
+            assert(false)
+        }
+    }
+    
+    internal func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        switch indexPath.section {
+            
+        case 0:
+            break
+        case 1:
+            let name = self.filteredNames[indexPath.item] as! [String : String]
+            print(name)
+            if currentMode == .trends {
+                self.searchAPI(searchKey: name[Constants.RECIPE_TITLE_KEY]!) { count in
+                    self.collectionView.reloadData()
+                }
+            }else{
+                
+            }
             
         default:
             assert(false)
@@ -154,14 +243,12 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
             
         case 1:
             return self.filteredNames.count
-            
         default:
             assert(false)
         }
     }
     
     internal func numberOfSections(in collectionView: UICollectionView) -> Int {
-        
         return 2
     }
     
@@ -184,12 +271,12 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
     
     internal func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         
-        return 10.0
+        return 5.0
     }
     
     internal func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         
-        return 10.0
+        return 5.0
     }
     
     internal func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
@@ -260,33 +347,33 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
             })
         }
         
-        self.collectionView.performBatchUpdates({
-            
-            for (oldIndex, oldName) in oldFilteredNames.enumerated() {
-                do {
-                    if try self.filteredNames.contains(where: oldName as! (AnyObject) throws -> Bool) == false {
-                        
-                        let indexPath = IndexPath(item: oldIndex, section: 1)
-                        self.collectionView.deleteItems(at: [indexPath])
-                    }
-                }catch{
-                    
-                }
-            }
-            
-            for (index, name) in self.filteredNames.enumerated() {
-                do {
-                    if try oldFilteredNames.contains(where: name as! (AnyObject) throws -> Bool) == false {
-                    
-                        let indexPath = IndexPath(item: index, section: 1)
-                        self.collectionView.insertItems(at: [indexPath])
-                    }
-                }catch{
-                    
-                }
-            }
-            
-        }, completion: nil)
+//        self.collectionView.performBatchUpdates({
+//            
+//            for (oldIndex, oldName) in oldFilteredNames.enumerated() {
+//                do {
+//                    if try self.filteredNames.contains(where: oldName as! (AnyObject) throws -> Bool) == false {
+//                        
+//                        let indexPath = IndexPath(item: oldIndex, section: 1)
+//                        self.collectionView.deleteItems(at: [indexPath])
+//                    }
+//                }catch{
+//                    
+//                }
+//            }
+//            
+//            for (index, name) in self.filteredNames.enumerated() {
+//                do {
+//                    if try oldFilteredNames.contains(where: name as! (AnyObject) throws -> Bool) == false {
+//                    
+//                        let indexPath = IndexPath(item: index, section: 1)
+//                        self.collectionView.insertItems(at: [indexPath])
+//                    }
+//                }catch{
+//                    
+//                }
+//            }
+//            
+//        }, completion: nil)
     }
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
         searchBar.setShowsCancelButton(true, animated: true)
@@ -296,7 +383,15 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         searchBar.setShowsCancelButton(false, animated: true)
     }
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.text = ""
         searchBar.resignFirstResponder()
+    }
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        self.searchAPI(searchKey: searchBar.text!) { count in
+            self.collectionView.reloadData()
+        }
+        searchBar.resignFirstResponder()
+        searchBar.text = ""
     }
     /*
     // MARK: - Navigation

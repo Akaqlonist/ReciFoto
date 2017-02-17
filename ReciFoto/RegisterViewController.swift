@@ -110,17 +110,24 @@ class RegisterViewController: UIViewController, UITextFieldDelegate {
         
         apiRequest.responseString(completionHandler: { response in
             do{
+                
                 let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                print(jsonResponse)
-                let status = jsonResponse[Constants.STATUS_KEY] as! Int
-                if status == 1{
-                    Profile.user_id = jsonResponse[Constants.USER_ID_KEY] as! String
+                let status = jsonResponse[Constants.STATUS_KEY] as! String
+                
+                if status == "1"{
+                    Profile.user_id = String(describing: jsonResponse[Constants.USER_ID_KEY] as! Int)
                     Profile.session_id = jsonResponse[Constants.USER_SESSION_KEY] as! String
                 
                     let appDelegate = UIApplication.shared.delegate as! AppDelegate
-                    appDelegate.changeRootViewController(with: "mainNavigationVC")
-                }else{
                     
+                    appDelegate.setHasLoginInfo(status: true)
+                    appDelegate.saveToUserDefaults()
+                    
+                    appDelegate.changeRootViewController(with: "mainTabVC")
+                }else{
+                    let alertController = UIAlertController(title: "ReciFoto", message: jsonResponse[Constants.MESSAGE_KEY] as! String?, preferredStyle: UIAlertControllerStyle.alert)
+                    alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+                    self.present(alertController, animated: true, completion: nil)
                 }
             }catch{
                 print("Error Parsing JSON from register_user_v2")

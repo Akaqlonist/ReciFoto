@@ -9,6 +9,7 @@
 import UIKit
 import CoreData
 import UserNotifications
+import FBSDKCoreKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -21,14 +22,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         UIApplication.shared.registerForRemoteNotifications()
         if hasLoginInfo() {
             loadFromUserDefaults()
-            changeRootViewController(with: "mainNavigationVC")
+            changeRootViewController(with: "mainTabVC")
         }
-        return true
+        return FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
     }
-
+    
+    
+    func application(_ application: UIApplication, open url: URL, sourceApplication: String?, annotation: Any) -> Bool {
+        return FBSDKApplicationDelegate.sharedInstance().application(application, open: url, sourceApplication: sourceApplication, annotation: annotation)
+    }
     func applicationWillResignActive(_ application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
         // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
+        FBSDKAppEvents.activateApp()
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
@@ -97,9 +103,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func hasLoginInfo() -> Bool{
         return UserDefaults.standard.bool(forKey: Constants.HAS_LOGIN_KEY)
     }
-    func setHasLoginInfo() {
-        UserDefaults.standard.set(true, forKey: Constants.HAS_LOGIN_KEY)
+    func setHasLoginInfo(status: Bool) {
+        UserDefaults.standard.set(status, forKey: Constants.HAS_LOGIN_KEY)
     }
+    
     // MARK: - Core Data stack
     
     lazy var persistentContainer: NSPersistentContainer = {

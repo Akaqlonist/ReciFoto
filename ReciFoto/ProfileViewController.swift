@@ -8,28 +8,54 @@
 
 import UIKit
 
-class ProfileViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class ProfileViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource {
     var feedList: [DGProfileItem] = []
     var currentIndex = 0
+    var settingButton : UIBarButtonItem?//()
+    var user_id = Profile.user_id
+    var user_name = Profile.user_name
+    
+    fileprivate let kCellIdentifier = "Cell"
+    fileprivate var scrolling = false
+    
+    @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var lblRecipes: UILabel!
     @IBOutlet weak var lblFollowers: UILabel!
     @IBOutlet weak var lblFollowing: UILabel!
     @IBOutlet weak var btnAvatar: UIButton!
+    @IBOutlet weak var lblUsername: UILabel!
     
-    @IBOutlet weak var tableView: UITableView!
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
-        self.tabBarController?.navigationItem.title = "My Profile"
+        self.navigationItem.title = "My Profile"
+        if user_id == Profile.user_id {
+            var settingImage = UIImage(named: "gear")
+            settingImage = settingImage?.withRenderingMode(.alwaysOriginal)
+            settingButton = UIBarButtonItem(image: settingImage, style: UIBarButtonItemStyle.plain, target: self, action: #selector(ProfileViewController.settingAction))
+            self.navigationItem.rightBarButtonItem = settingButton
+        }
         loadFromServer()
+        
+        collectionView.register(SACollectionViewVerticalScalingCell.self, forCellWithReuseIdentifier: kCellIdentifier)
+        
+        guard let layout = collectionView.collectionViewLayout as? SACollectionViewVerticalScalingFlowLayout else {
+            return
+        }
+        
+        layout.scaleMode = .hard
+        layout.alphaMode = .easy
+        layout.scrollDirection = .vertical
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
+    func settingAction(){
+        self.performSegue(withIdentifier: "showSettings", sender: self)
+    }
     func loadFromServer(){
         if profileAPIByIndex(index: currentIndex) == 1{
             
@@ -39,14 +65,15 @@ class ProfileViewController: UIViewController, UITableViewDataSource, UITableVie
     }
     func profileAPIByIndex(index: Int) -> Int{
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.getProfileV2),
-                                 method: .post, parameters: ["user_id" : Profile.user_id,
-                                                             "session_id" : Profile.session_id,
-                                                             "user_name": Profile.user_name,
-                                                             "index" : index])
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
+                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                                             Constants.TOUSERID_KEY : user_id,
+                                                             Constants.INDEX_KEY : index])
         
         apiRequest.responseString(completionHandler: { response in
             do{
                 let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
+
                 let status = jsonResponse[Constants.STATUS_KEY] as! String
                 
                 if status == "1"{
@@ -54,12 +81,14 @@ class ProfileViewController: UIViewController, UITableViewDataSource, UITableVie
         
                     let profile = jsonResponse[Constants.PROFILE_KEY] as! [String : AnyObject]
                     print(profile)
-                    let profile_picture = profile[Constants.PICTURE_KEY] as! String
-                    if profile_picture.characters.count > 0 {
-                        self.btnAvatar.af_setBackgroundImage(for: UIControlState.normal, url: URL(string: profile_picture)!)
-                        self.btnAvatar.layer.cornerRadius = 40
-                        self.btnAvatar.clipsToBounds = true
+                    if let profile_picture = profile[Constants.PICTURE_KEY] as? String {
+                        if profile_picture.characters.count > 0 {
+                            self.btnAvatar.af_setBackgroundImage(for: UIControlState.normal, url: URL(string: profile_picture)!)
+                            self.btnAvatar.layer.cornerRadius = 40
+                            self.btnAvatar.clipsToBounds = true
+                        }
                     }
+                    self.lblUsername.text = self.user_name
                     let follower = jsonResponse[Constants.FOLLOWER_KEY] as! String
                     let following = jsonResponse[Constants.FOLLOWING_KEY] as! String
                     let recipe_count = jsonResponse[Constants.RECIPE_COUNT_KEY] as! String
@@ -72,7 +101,7 @@ class ProfileViewController: UIViewController, UITableViewDataSource, UITableVie
                         for recipe in result {
                             self.feedList.append(DGProfileItem(dict: recipe as! NSDictionary))
                         }
-                        self.tableView.reloadData()
+                        self.collectionView.reloadData()
                     }else{
                         //                        self.lblNoRecipePost.isHidden = false
                     }
@@ -82,26 +111,48 @@ class ProfileViewController: UIViewController, UITableViewDataSource, UITableVie
                     self.present(alertController, animated: true, completion: nil)
                 }
             }catch{
-                print("Error Parsing JSON from get_feed_by_index")
+                print("Error Parsing JSON from get_profile")
             }
             
         })
         
         return 1
     }
-    // MARK: - Table view data source
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // #warning Incomplete implementation, return the number of rows
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        print(collectionView)
         return self.feedList.count
     }
     
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell: DGProfileCell = tableView.dequeueReusableCell(withIdentifier: "DGProfileCell", for: indexPath) as! DGProfileCell
-        cell.loadData(self.feedList[indexPath.row])
-        cell.setNeedsUpdateConstraints()
-        cell.updateConstraintsIfNeeded()
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        
+        let tagNumber = 10001
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: kCellIdentifier, for: indexPath)
+        
+        if let cell = cell as? SACollectionViewVerticalScalingCell {
+//            cell.containerView?.viewWithTag(tagNumber)?.removeFromSuperview()
+            
+            let imageView = UIImageView(frame: cell.bounds)
+//            imageView.tag = tagNumber
+            let item = self.feedList[indexPath.row] 
+            imageView.af_setImage(withURL: URL(string: item.imageURL)!)
+            //            imageView.image = UIImage(named: "0\(number)")
+            cell.containerView?.addSubview(imageView)
+        }
+        
         return cell
+    }
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        scrolling = true
+        
+    }
+    
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        scrolling = false
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Double(Int64(3.0 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC), execute: {
+            if !self.scrolling {
+                
+            }
+        })
     }
     /*
     // MARK: - Navigation

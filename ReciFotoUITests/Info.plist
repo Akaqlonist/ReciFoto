@@ -18,5 +18,27 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fb344405622359068</string>
+			</array>
+		</dict>
+	</array>
+	<key>FacebookAppID</key>
+	<string>344405622359068</string>
+	<key>FacebookDisplayName</key>
+	<string>ReciFoto</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fbapi</string>
+		<string>fb-messenger-api</string>
+		<string>fbauth2</string>
+		<string>fbshareextension</string>
+	</array>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Recifoto would like to access your photo library for recipe upload</string>
 </dict>
 </plist>
