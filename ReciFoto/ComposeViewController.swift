@@ -77,8 +77,8 @@ class ComposeViewController: UIViewController, UITextViewDelegate {
     
     @objc private func done() {
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.addComment),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
                                                              Constants.RECIPE_ID_KEY : recipe_id,
                                                              Constants.COMMENTS_KEY : textView.text])
         apiRequest.responseString(completionHandler: { response in

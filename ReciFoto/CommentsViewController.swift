@@ -90,8 +90,8 @@ class CommentsViewController: UIViewController, UITableViewDelegate, UITableView
     }
     func commentAPIByIndex(index: Int, didFinishedWithResult: @escaping(Int) -> Void) -> Void{
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.getCommentsByIndexV2),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
                                                              Constants.RECIPE_ID_KEY : recipe_id,
                                                              Constants.INDEX_KEY : index])
         apiRequest.responseString(completionHandler: { response in

@@ -9,7 +9,7 @@
 import UIKit
 
 class ActivityViewController: UITableViewController {
-    var feedList: [DGFeedItem] = []
+    var feedList: [Recipe] = []
     var currentIndex = 0
     
     override func viewDidLoad() {
@@ -32,6 +32,9 @@ class ActivityViewController: UITableViewController {
         self.tableView.es_addInfiniteScrolling(animator: footer) { [weak self] in
             self?.loadMore()
         }
+        self.tableView.estimatedRowHeight = 500.0
+        self.tableView.rowHeight = UITableViewAutomaticDimension
+        
         self.tableView.refreshIdentifier = String.init(describing: "default")
         self.tableView.expriedTimeInterval = 20.0
         
@@ -43,7 +46,7 @@ class ActivityViewController: UITableViewController {
         // Dispose of any resources that can be recreated.
     }
     func collectionAction(){
-        if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "myCollectionVC") as? MyCollectionViewController {
+        if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "myCollectionVC") as? CollectionsViewController {
             if let navigator = navigationController {
                 navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
                 navigator.pushViewController(viewController, animated: true)
@@ -84,9 +87,9 @@ class ActivityViewController: UITableViewController {
     }
     func feedAPIByIndex(index: Int, didFinishedWithResult: @escaping(Int) -> Void) -> Void{
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.getUserRecipesV2),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                             Constants.USER_SESSION_KEY : Profile.session_id,
-                                                             Constants.USER_NAME_KEY: Profile.user_name,
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
+                                                             Constants.USER_NAME_KEY: Me.user.userName,
                                                              Constants.INDEX_KEY : index])
         
         apiRequest.responseString(completionHandler: { response in
@@ -98,7 +101,7 @@ class ActivityViewController: UITableViewController {
                     let result = jsonResponse[Constants.RESULT_KEY] as! [AnyObject]
                     if result.count > 0 {
                         for recipe in result {
-                            self.feedList.append(DGFeedItem(dict: recipe as! NSDictionary))
+                            self.feedList.append(Recipe(dict: recipe as! NSDictionary))
                         }
                     }else{
 //                        self.lblNoRecipePost.isHidden = false
@@ -146,10 +149,10 @@ class ActivityViewController: UITableViewController {
 }
 extension ActivityViewController : DGFeedCellDelegaete{
 
-    func didLikeWithItem(item: DGFeedItem) {
+    func didLikeWithItem(item: Recipe) {
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.recipeLikeV2),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
                                                              Constants.RECIPE_ID_KEY : item.identifier])
         
         apiRequest.responseString(completionHandler: { response in
@@ -170,7 +173,7 @@ extension ActivityViewController : DGFeedCellDelegaete{
         })
         
     }
-    func didMoreWithItem(item: DGFeedItem) {
+    func didMoreWithItem(item: Recipe) {
         let actionSheetController = UIAlertController(title: "ReciFoto", message: "", preferredStyle: .actionSheet)
         
         let cancelActionButton = UIAlertAction(title: "Cancel", style: .cancel) { action -> Void in
@@ -191,7 +194,7 @@ extension ActivityViewController : DGFeedCellDelegaete{
         self.present(actionSheetController, animated: true, completion: nil)
         
     }
-    func didCommentWithItem(item: DGFeedItem) {
+    func didCommentWithItem(item: Recipe) {
         if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "commentsVC") as? CommentsViewController {
             if let navigator = navigationController {
                 navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
@@ -199,9 +202,18 @@ extension ActivityViewController : DGFeedCellDelegaete{
             }
         }
     }
-    func didProfileWithItem(item: DGFeedItem) {
+    func didProfileWithItem(item: Recipe) {
         if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "profileVC") as? ProfileViewController {
             if let navigator = navigationController {
+                navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+                navigator.pushViewController(viewController, animated: true)
+            }
+        }
+    }
+    func didDetailWithItem(item: Recipe) {
+        if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "recipeVC") as? RecipeViewController {
+            if let navigator = navigationController {
+                viewController.recipe = item
                 navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
                 navigator.pushViewController(viewController, animated: true)
             }

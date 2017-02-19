@@ -9,11 +9,10 @@
 import UIKit
 
 class ProfileViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource {
-    var feedList: [DGProfileItem] = []
+    var feedList: [Recipe] = []
     var currentIndex = 0
     var settingButton : UIBarButtonItem?//()
-    var user_id = Profile.user_id
-    var user_name = Profile.user_name
+    var user = Me.user
     
     fileprivate let kCellIdentifier = "Cell"
     fileprivate var scrolling = false
@@ -30,7 +29,7 @@ class ProfileViewController: UIViewController, UICollectionViewDelegate, UIColle
 
         // Do any additional setup after loading the view.
         self.navigationItem.title = "My Profile"
-        if user_id == Profile.user_id {
+        if user.id == Me.user.id {
             var settingImage = UIImage(named: "gear")
             settingImage = settingImage?.withRenderingMode(.alwaysOriginal)
             settingButton = UIBarButtonItem(image: settingImage, style: UIBarButtonItemStyle.plain, target: self, action: #selector(ProfileViewController.settingAction))
@@ -65,9 +64,9 @@ class ProfileViewController: UIViewController, UICollectionViewDelegate, UIColle
     }
     func profileAPIByIndex(index: Int) -> Int{
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.getProfileV2),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                             Constants.USER_SESSION_KEY : Profile.session_id,
-                                                             Constants.TOUSERID_KEY : user_id,
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
+                                                             Constants.TOUSERID_KEY : user.id,
                                                              Constants.INDEX_KEY : index])
         
         apiRequest.responseString(completionHandler: { response in
@@ -78,9 +77,7 @@ class ProfileViewController: UIViewController, UICollectionViewDelegate, UIColle
                 
                 if status == "1"{
                     let result = jsonResponse[Constants.RECIPE_KEY] as! [AnyObject]
-        
                     let profile = jsonResponse[Constants.PROFILE_KEY] as! [String : AnyObject]
-                    print(profile)
                     if let profile_picture = profile[Constants.PICTURE_KEY] as? String {
                         if profile_picture.characters.count > 0 {
                             self.btnAvatar.af_setBackgroundImage(for: UIControlState.normal, url: URL(string: profile_picture)!)
@@ -88,7 +85,7 @@ class ProfileViewController: UIViewController, UICollectionViewDelegate, UIColle
                             self.btnAvatar.clipsToBounds = true
                         }
                     }
-                    self.lblUsername.text = self.user_name
+                    self.lblUsername.text = self.user.userName
                     let follower = jsonResponse[Constants.FOLLOWER_KEY] as! String
                     let following = jsonResponse[Constants.FOLLOWING_KEY] as! String
                     let recipe_count = jsonResponse[Constants.RECIPE_COUNT_KEY] as! String
@@ -99,7 +96,7 @@ class ProfileViewController: UIViewController, UICollectionViewDelegate, UIColle
                     
                     if result.count > 0 {
                         for recipe in result {
-                            self.feedList.append(DGProfileItem(dict: recipe as! NSDictionary))
+                            self.feedList.append(Recipe(dict: recipe as! NSDictionary))
                         }
                         self.collectionView.reloadData()
                     }else{
@@ -125,21 +122,27 @@ class ProfileViewController: UIViewController, UICollectionViewDelegate, UIColle
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
-        let tagNumber = 10001
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: kCellIdentifier, for: indexPath)
         
         if let cell = cell as? SACollectionViewVerticalScalingCell {
-//            cell.containerView?.viewWithTag(tagNumber)?.removeFromSuperview()
             
             let imageView = UIImageView(frame: cell.bounds)
-//            imageView.tag = tagNumber
             let item = self.feedList[indexPath.row] 
             imageView.af_setImage(withURL: URL(string: item.imageURL)!)
-            //            imageView.image = UIImage(named: "0\(number)")
             cell.containerView?.addSubview(imageView)
         }
         
         return cell
+    }
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let recipe = self.feedList[indexPath.row]
+        if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "recipeVC") as? RecipeViewController {
+            if let navigator = navigationController {
+                viewController.recipe = recipe
+                navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+                navigator.pushViewController(viewController, animated: true)
+            }
+        }
     }
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         scrolling = true

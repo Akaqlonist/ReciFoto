@@ -5,7 +5,10 @@ target 'ReciFoto' do
 pod 'FBSDKCoreKit'
 pod 'FBSDKLoginKit'
 pod 'FBSDKShareKit'
-
+pod 'Fabric'
+pod 'TwitterKit'
+pod 'TwitterCore'
+pod 'Crashlytics'
 end
 
 post_install do |installer|

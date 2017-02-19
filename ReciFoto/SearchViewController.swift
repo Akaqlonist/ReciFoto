@@ -79,8 +79,8 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         self.currentMode = .trends
         self.lblNoResult.isHidden = true
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.getTrendsV2),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
                                                              Constants.INDEX_KEY : index])
         
         apiRequest.responseString(completionHandler: { response in
@@ -114,8 +114,8 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         self.currentMode = .search
         self.lblNoResult.isHidden = true
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.recipeSearchV2),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
                                                              Constants.SEARCH_KEY : searchKey,
                                                              Constants.INDEX_KEY : index])
         
@@ -181,8 +181,9 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
             
         case 1:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "TextCollectionViewCell.identifier", for: indexPath) as! TextCollectionViewCell
-            let name = self.filteredNames[indexPath.item] as! [String : String]
+            
             if currentMode == .trends {
+                let name = self.filteredNames[indexPath.item] as! [String : String]
                 cell.colorView.alpha = 1
                 cell.imageView.alpha = 0
                 
@@ -194,16 +195,18 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
                 cell.label.textAlignment = .center
                 cell.label.text = name[Constants.RECIPE_TITLE_KEY]
             }else{
+                let name = self.filteredNames[indexPath.item] as! NSDictionary
+                let recipe = Recipe(dict: name)
                 cell.imageView.alpha = 0
                 cell.colorView.alpha = 1
                 
                 cell.imageView.layer.cornerRadius = 10.0
                 cell.imageView.layer.masksToBounds = true
-                cell.imageView.af_setImage(withURL: URL(string: (name[Constants.RECIPE_IMAGE_KEY]?.replacingOccurrences(of: " ", with: "%20"))!)!)
+//                cell.imageView.af_setImage(withURL: URL(string: (name[Constants.RECIPE_IMAGE_KEY]?.replacingOccurrences(of: " ", with: "%20"))!)!)
                 
                 cell.label.textColor = UIColor.white
                 cell.label.textAlignment = .center
-                cell.label.text = name[Constants.RECIPE_TITLE_KEY]
+                cell.label.text = recipe.title
             }
             
             return cell
@@ -219,14 +222,21 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         case 0:
             break
         case 1:
-            let name = self.filteredNames[indexPath.item] as! [String : String]
-            print(name)
             if currentMode == .trends {
+                let name = self.filteredNames[indexPath.item] as! [String : String]
                 self.searchAPI(searchKey: name[Constants.RECIPE_TITLE_KEY]!) { count in
                     self.collectionView.reloadData()
                 }
             }else{
-                
+                let name = self.filteredNames[indexPath.item] as! NSDictionary
+                let recipe = Recipe(dict: name)
+                if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "recipeVC") as? RecipeViewController {
+                    if let navigator = navigationController {
+                        viewController.recipe = recipe
+                        navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+                        navigator.pushViewController(viewController, animated: true)
+                    }
+                }
             }
             
         default:

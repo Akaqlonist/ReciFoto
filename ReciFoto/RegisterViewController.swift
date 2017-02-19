@@ -115,8 +115,8 @@ class RegisterViewController: UIViewController, UITextFieldDelegate {
                 let status = jsonResponse[Constants.STATUS_KEY] as! String
                 
                 if status == "1"{
-                    Profile.user_id = String(describing: jsonResponse[Constants.USER_ID_KEY] as! Int)
-                    Profile.session_id = jsonResponse[Constants.USER_SESSION_KEY] as! String
+                    Me.user.id = String(describing: jsonResponse[Constants.USER_ID_KEY] as! Int)
+                    Me.session_id = jsonResponse[Constants.USER_SESSION_KEY] as! String
                 
                     let appDelegate = UIApplication.shared.delegate as! AppDelegate
                     

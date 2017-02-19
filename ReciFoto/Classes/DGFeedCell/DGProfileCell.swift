@@ -17,7 +17,7 @@ class DGProfileCell: UITableViewCell {
         self.contentView.bounds = UIScreen.main.bounds
     }
     
-    func loadData(_ item: DGProfileItem) {
+    func loadData(_ item: Recipe) {
         if item.imageURL.characters.count > 0 {
             let size = contentImageView.frame.size
             

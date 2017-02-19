@@ -1,14 +1,14 @@
 //
-//  PostTableViewCell.swift
-//  NewsFeed
+//  MinimumCommentTableViewCell.swift
+//  ReciFoto
 //
-//  Created by Alex Manzella on 28/07/16.
-//  Copyright © 2016 devlucky. All rights reserved.
+//  Created by Colin Taylor on 2/18/17.
+//  Copyright © 2017 Colin Taylor. All rights reserved.
 //
 
 import UIKit
 
-class CommentTableViewCell: UITableViewCell {
+class MinimumCommentTableViewCell: UITableViewCell {
     
     private static let AvatarPlaceholder = UIImage(named: "avatar_placeholder")
     private static let AvatarSize = 35
@@ -30,7 +30,7 @@ class CommentTableViewCell: UITableViewCell {
     
     override func prepareForReuse() {
         super.prepareForReuse()
-//        avatarImage.hnk_cancelSetImage()
+        //        avatarImage.hnk_cancelSetImage()
     }
     
     func configure(with comment: Comment) {
@@ -38,13 +38,14 @@ class CommentTableViewCell: UITableViewCell {
             let size = CGSize(width: 35, height: 35)
             avatarImage.af_setImage(
                 withURL: url,
-                placeholderImage: CommentTableViewCell.AvatarPlaceholder,
+                placeholderImage: MinimumCommentTableViewCell.AvatarPlaceholder,
                 filter: AspectScaledToFillSizeWithRoundedCornersFilter(size: size, radius: 0.0),
                 imageTransition: .crossDissolve(0.2)
             )
         }
         authorLabel.text = "\(comment.author.userName)"
         commentLabel.text = comment.text
+        commentLabel.sizeToFit()
         if comment.time < 60 {
             self.timeLabel.text = String(format: "%ds ago", comment.time)
         }else if comment.time < 3600 {
@@ -62,13 +63,14 @@ class CommentTableViewCell: UITableViewCell {
         commentLabel.numberOfLines = 0
         commentLabel.lineBreakMode = .byWordWrapping
         commentLabel.textColor = UIColor.darkGray
+        
         timeLabel.textColor = UIColor.darkGray
         timeLabel.font = UIFont.systemFont(ofSize: 12.0)
         avatarImage.clipsToBounds = true
         avatarImage.contentMode = .scaleAspectFill
         avatarImage.layer.borderColor = UIColor.lightGray.cgColor
         avatarImage.layer.borderWidth = 0.5
-        avatarImage.layer.cornerRadius = CGFloat(CommentTableViewCell.AvatarSize / 2)
+        avatarImage.layer.cornerRadius = CGFloat(MinimumCommentTableViewCell.AvatarSize / 2)
     }
     
     private func layoutUI() {
@@ -77,34 +79,38 @@ class CommentTableViewCell: UITableViewCell {
         }
         
         let margin = 10
+        let commonWidth = 60
         
         avatarImage.snp.makeConstraints { (make) in
             make.leading.top.equalTo(margin)
-            make.width.height.equalTo(CommentTableViewCell.AvatarSize)
+            make.width.height.equalTo(MinimumCommentTableViewCell.AvatarSize)
         }
         
         authorLabel.snp.makeConstraints { (make) in
             make.leading.equalTo(avatarImage.snp.trailing).offset(margin)
             make.top.equalTo(avatarImage.snp.top)
             make.bottom.equalTo(timeLabel.snp.top)
-//            make.centerY.equalTo(avatarImage)
-            make.trailing.equalTo(self).inset(margin)
+            make.width.equalTo(commonWidth)
+            //            make.centerY.equalTo(avatarImage)
+//            make.trailing.equalTo(self).inset(margin)
         }
         
         timeLabel.snp.makeConstraints { (make) in
             make.leading.equalTo(avatarImage.snp.trailing).offset(margin)
             make.bottom.equalTo(avatarImage.snp.bottom)
-//            make.centerY.equalTo(avatarImage)
-            make.trailing.equalTo(self).inset(margin)
+            make.width.equalTo(commonWidth)
+            //            make.centerY.equalTo(avatarImage)
+//            make.trailing.equalTo(self).inset(margin)
         }
         
         commentLabel.snp.makeConstraints { (make) in
-            make.top.equalTo(avatarImage.snp.bottom)
-            make.leading.equalTo(avatarImage.snp.centerX)
+//            make.top.equalTo(self)
+            make.leading.equalTo(timeLabel.snp.trailing).offset(margin)
             make.trailing.equalTo(self).inset(margin)
-            make.bottom.equalTo(self).inset(margin)
+            make.centerY.equalTo(avatarImage.snp.centerY)
+//            make.bottom.equalTo(self)
         }
         
-
+        
     }
 }

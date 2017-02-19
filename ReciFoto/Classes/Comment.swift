@@ -22,9 +22,9 @@ struct Comment {
         time = 0
     }
     init(dict : NSDictionary){
+        id = dict["comment_id"] as! String
         text = dict["comment"] as! String
         time = (dict["time_elapsed"] as! NSString).integerValue
-        author = User(dict : dict)
-        id = dict["comment_id"] as! String
+        author = User(id: dict[Constants.USER_ID_KEY] as! String, username: dict[Constants.USER_NAME_KEY] as! String, avatar: dict[Constants.PROFILE_PICTURE_KEY] as! String)
     }
 }

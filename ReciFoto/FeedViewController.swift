@@ -9,7 +9,7 @@
 import UIKit
 class FeedViewController: UITableViewController {
     
-    var feedList: [DGFeedItem] = []
+    var feedList: [Recipe] = []
     var currentIndex = 0
     
     @IBOutlet weak var lblNoRecipePost: UILabel!
@@ -36,6 +36,9 @@ class FeedViewController: UITableViewController {
         self.tableView.es_addInfiniteScrolling(animator: footer) { [weak self] in
             self?.loadMore()
         }
+        self.tableView.estimatedRowHeight = 500.0
+        self.tableView.rowHeight = UITableViewAutomaticDimension
+        
         self.tableView.refreshIdentifier = String.init(describing: "default")
         self.tableView.expriedTimeInterval = 20.0
         
@@ -80,8 +83,8 @@ class FeedViewController: UITableViewController {
     }
     func feedAPIByIndex(index: Int, didFinishedWithResult: @escaping(Int) -> Void) -> Void{
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.getFeedByIndex),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
                                                              Constants.INDEX_KEY : index])
         apiRequest.responseString(completionHandler: { response in
             do{
@@ -93,7 +96,7 @@ class FeedViewController: UITableViewController {
                     let result = jsonResponse[Constants.RESULT_KEY] as! [AnyObject]
                     if result.count > 0 {
                         for recipe in result {
-                            self.feedList.append(DGFeedItem(dict: recipe as! NSDictionary))
+                            self.feedList.append(Recipe(dict: recipe as! NSDictionary))
                         }
                         
                     }else{
@@ -136,59 +139,16 @@ class FeedViewController: UITableViewController {
         cell.updateConstraintsIfNeeded()
         return cell 
     }
-    
-
-    /*
-    // Override to support conditional editing of the table view.
-    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the specified item to be editable.
-        return true
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        print(indexPath)
     }
-    */
-
-    /*
-    // Override to support editing the table view.
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            // Delete the row from the data source
-            tableView.deleteRows(at: [indexPath], with: .fade)
-        } else if editingStyle == .insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }    
-    }
-    */
-
-    /*
-    // Override to support rearranging the table view.
-    override func tableView(_ tableView: UITableView, moveRowAt fromIndexPath: IndexPath, to: IndexPath) {
-
-    }
-    */
-
-    /*
-    // Override to support conditional rearranging of the table view.
-    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the item to be re-orderable.
-        return true
-    }
-    */
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
 
 }
 extension FeedViewController : DGFeedCellDelegaete{
-    func didLikeWithItem(item: DGFeedItem) {
+    func didLikeWithItem(item: Recipe) {
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.recipeLikeV2),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
                                                              Constants.RECIPE_ID_KEY : item.identifier])
         
         apiRequest.responseString(completionHandler: { response in
@@ -210,7 +170,7 @@ extension FeedViewController : DGFeedCellDelegaete{
         })
         
     }
-    func didMoreWithItem(item: DGFeedItem) {
+    func didMoreWithItem(item: Recipe) {
 
         let actionSheetController = UIAlertController(title: "ReciFoto", message: "Choose your action", preferredStyle: .actionSheet)
         
@@ -222,11 +182,11 @@ extension FeedViewController : DGFeedCellDelegaete{
         let saveActionButton = UIAlertAction(title: "Save to Collection", style: .default) { action -> Void in
             print("Save")
             let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.saveCollection),
-                                     method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                                 Constants.USER_SESSION_KEY : Profile.session_id,
+                                     method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                                 Constants.USER_SESSION_KEY : Me.session_id,
                                                                  Constants.RECIPE_ID_KEY : item.identifier])
-            print(Profile.user_id)
-            print(Profile.session_id)
+            print(Me.user.id)
+            print(Me.session_id)
             apiRequest.responseString(completionHandler: { response in
                 do{
                     print(response)
@@ -250,11 +210,11 @@ extension FeedViewController : DGFeedCellDelegaete{
         let reportActionButton = UIAlertAction(title: "Report Inappropriate", style: .default) { action -> Void in
             print("Report Inappropriate")
             let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.reportInappropriate),
-                                     method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                                 Constants.USER_SESSION_KEY : Profile.session_id,
+                                     method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                                 Constants.USER_SESSION_KEY : Me.session_id,
                                                                  Constants.RECIPE_ID_KEY : item.identifier])
-            print(Profile.user_id)
-            print(Profile.session_id)
+            print(Me.user.id)
+            print(Me.session_id)
             apiRequest.responseString(completionHandler: { response in
                 do{
                     print(response)
@@ -278,7 +238,7 @@ extension FeedViewController : DGFeedCellDelegaete{
         self.present(actionSheetController, animated: true, completion: nil)
         
     }
-    func didCommentWithItem(item: DGFeedItem) {
+    func didCommentWithItem(item: Recipe) {
         if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "commentsVC") as? CommentsViewController {
             if let navigator = navigationController {
                 navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
@@ -287,16 +247,23 @@ extension FeedViewController : DGFeedCellDelegaete{
             }
         }
     }
-    func didProfileWithItem(item: DGFeedItem) {
+    func didProfileWithItem(item: Recipe) {
         
         if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "profileVC") as? ProfileViewController {
             if let navigator = navigationController {
                 navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
-                viewController.user_id = item.user_id
-                viewController.user_name = item.userName
+                viewController.user = item.user
                 navigator.pushViewController(viewController, animated: true)
             }
         }
-        
+    }
+    func didDetailWithItem(item: Recipe) {
+        if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "recipeVC") as? RecipeViewController {
+            if let navigator = navigationController {
+                viewController.recipe = item
+                navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+                navigator.pushViewController(viewController, animated: true)
+            }
+        }
     }
 }

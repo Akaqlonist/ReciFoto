@@ -1,5 +1,5 @@
 //
-//  MyCollectionViewController.swift
+//  CollectionsViewController.swift
 //  ReciFoto
 //
 //  Created by Colin Taylor on 2/15/17.
@@ -7,9 +7,10 @@
 //
 
 import UIKit
-class MyCollectionViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
-    var feedList: [DGProfileItem] = []
+class CollectionsViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
+    var feedList: [Recipe] = []
     fileprivate let kCellIdentifier = "Cell"
+    
     fileprivate var scrolling = false
     var currentIndex = 0
     
@@ -28,21 +29,29 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
         layout.alphaMode = .easy
         layout.scrollDirection = .vertical
         
-        var header: ESRefreshProtocol & ESRefreshAnimatorProtocol
-        var footer: ESRefreshProtocol & ESRefreshAnimatorProtocol
+//        var header: ESRefreshProtocol & ESRefreshAnimatorProtocol
+//        var footer: ESRefreshProtocol & ESRefreshAnimatorProtocol
+//        
+//        header = ESRefreshHeaderAnimator.init(frame: CGRect.zero)
+//        footer = ESRefreshFooterAnimator.init(frame: CGRect.zero)
         
-        header = ESRefreshHeaderAnimator.init(frame: CGRect.zero)
-        footer = ESRefreshFooterAnimator.init(frame: CGRect.zero)
-        self.collectionView?.es_addPullToRefresh(animator: header) { [weak self] in
-            self?.refreshFeed()
-        }
-        self.collectionView?.es_addInfiniteScrolling(animator: footer) { [weak self] in
-            self?.loadMore()
-        }
-        self.collectionView?.refreshIdentifier = String.init(describing: "default")
-        self.collectionView?.expriedTimeInterval = 20.0
-        
-        self.collectionView?.es_startPullToRefresh()
+//        self.collectionView?.es_addPullToRefresh(animator: header) { [weak self] in
+//            self?.refreshFeed()
+//        }
+//        self.collectionView?.es_addInfiniteScrolling(animator: footer) { [weak self] in
+//            self?.loadMore()
+//        }
+//        self.collectionView?.refreshIdentifier = String.init(describing: "default")
+//        self.collectionView?.expriedTimeInterval = 20.0
+//        
+//        self.collectionView?.es_startPullToRefresh()
+//        self.collectionView?.es_addPullToRefresh {
+            self.refreshFeed()
+//        }
+//        self.collectionView?.es_startPullToRefresh()
+//        self.collectionView?.es_addInfiniteScrolling {
+//            self.loadMore()
+//        }
     }
     
     override func didReceiveMemoryWarning() {
@@ -83,8 +92,8 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
     }
     func collectionAPIByIndex(index: Int, didFinishedWithResult: @escaping(Int) -> Void) -> Void{
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.getCollectionByIndex),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Profile.user_id,
-                                                             Constants.USER_SESSION_KEY : Profile.session_id,
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
                                                              Constants.INDEX_KEY : index])
         apiRequest.responseString(completionHandler: { response in
             do{
@@ -96,7 +105,7 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
                     let result = jsonResponse[Constants.RESULT_KEY] as! [AnyObject]
                     if result.count > 0 {
                         for recipe in result {
-                            self.feedList.append(DGProfileItem(dict: recipe as! NSDictionary))
+                            self.feedList.append(Recipe(dict: recipe as! NSDictionary))
                         }
                         
                     }else{
@@ -118,13 +127,12 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
                 }
             }catch{
                 didFinishedWithResult(0)
-                print("Error Parsing JSON from get_feed_by_index")
+                print("Error Parsing JSON from get_collection_by_index")
             }
             
         })
     }
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        print(collectionView)
         return self.feedList.count
     }
     
@@ -137,11 +145,20 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
             let imageView = UIImageView(frame: cell.bounds)
             let item = self.feedList[indexPath.row]
             imageView.af_setImage(withURL: URL(string: item.imageURL)!)
-            //            imageView.image = UIImage(named: "0\(number)")
+            print(cell.containerView ?? "nil", indexPath.row)
             cell.containerView?.addSubview(imageView)
         }
-        
         return cell
+    }
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let recipe = self.feedList[indexPath.row] 
+        if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "recipeVC") as? RecipeViewController {
+            if let navigator = navigationController {
+                viewController.recipe = recipe
+                navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+                navigator.pushViewController(viewController, animated: true)
+            }
+        }
     }
     override func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         scrolling = true

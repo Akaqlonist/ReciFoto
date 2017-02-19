@@ -10,6 +10,9 @@ import UIKit
 import CoreData
 import UserNotifications
 import FBSDKCoreKit
+import Fabric
+import TwitterKit
+import Crashlytics
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -19,6 +22,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        Fabric.with([Crashlytics.self, Twitter.self])
+
         UIApplication.shared.registerForRemoteNotifications()
         if hasLoginInfo() {
             loadFromUserDefaults()
@@ -76,20 +81,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func saveToUserDefaults(){
         let defaults = UserDefaults.standard
         
-        defaults.set(Profile.user_email, forKey: Constants.USER_EMAIL_KEY)
-        defaults.set(Profile.user_id, forKey: Constants.USER_ID_KEY)
-        defaults.set(Profile.session_id, forKey: Constants.USER_SESSION_KEY)
-        defaults.set(Profile.user_name, forKey: Constants.USER_NAME_KEY)
+        defaults.set(Me.user.userEmail, forKey: Constants.USER_EMAIL_KEY)
+        defaults.set(Me.user.id, forKey: Constants.USER_ID_KEY)
+        defaults.set(Me.session_id, forKey: Constants.USER_SESSION_KEY)
+        defaults.set(Me.user.userName, forKey: Constants.USER_NAME_KEY)
         
         defaults.synchronize()
     }
     func loadFromUserDefaults(){
         let defaults = UserDefaults.standard
         
-        Profile.session_id = defaults.string(forKey: Constants.USER_SESSION_KEY)!
-        Profile.user_name = defaults.string(forKey: Constants.USER_NAME_KEY)!
-        Profile.user_id = defaults.string(forKey: Constants.USER_ID_KEY)!
-        Profile.user_email = defaults.string(forKey: Constants.USER_EMAIL_KEY)!
+        Me.session_id = defaults.string(forKey: Constants.USER_SESSION_KEY)!
+        Me.user.userName = defaults.string(forKey: Constants.USER_NAME_KEY)!
+        Me.user.id = defaults.string(forKey: Constants.USER_ID_KEY)!
+        Me.user.userEmail = defaults.string(forKey: Constants.USER_EMAIL_KEY)!
     }
     func isFirstLaunch() -> Bool {
         let launchedBefore = UserDefaults.standard.bool(forKey: Constants.LAUNCHED_BEFORE_KEY)
@@ -157,7 +162,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         for i in 0..<deviceToken.count {
             token = token + String(format: "%02.2hhx", arguments: [deviceToken[i]])
         }
-        Profile.device_token = token
+        Me.device_token = token
     }
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         print("Failed to register:", error)

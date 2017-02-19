@@ -9,10 +9,11 @@
 import UIKit
 
 protocol DGFeedCellDelegaete {
-    func didLikeWithItem(item : DGFeedItem)
-    func didMoreWithItem(item : DGFeedItem)
-    func didCommentWithItem(item : DGFeedItem)
-    func didProfileWithItem(item : DGFeedItem)
+    func didLikeWithItem(item : Recipe)
+    func didMoreWithItem(item : Recipe)
+    func didCommentWithItem(item : Recipe)
+    func didProfileWithItem(item : Recipe)
+    func didDetailWithItem(item : Recipe)
 }
 class DGFeedCell: UITableViewCell {
 
@@ -23,7 +24,7 @@ class DGFeedCell: UITableViewCell {
     @IBOutlet weak var avatarImageView: UIImageView!
     @IBOutlet weak var lblLikes: UILabel!
     @IBOutlet weak var lblComments: UILabel!
-    var recipeItem : DGFeedItem?
+    var recipeItem : Recipe?
     var delegate : DGFeedCellDelegaete?
 
     override func awakeFromNib() {
@@ -31,7 +32,7 @@ class DGFeedCell: UITableViewCell {
         self.contentView.bounds = UIScreen.main.bounds
     }
 
-    func loadData(_ item: DGFeedItem) {
+    func loadData(_ item: Recipe) {
         recipeItem = item
         self.titleLabel.text = item.title
         if item.imageURL.characters.count > 0 {
@@ -44,18 +45,18 @@ class DGFeedCell: UITableViewCell {
                 imageTransition: .crossDissolve(0.2)
             )
         }
-        if item.profile_picture.characters.count > 0 {
+        if item.user.avatar.characters.count > 0 {
             let size = avatarImageView.frame.size
             
             avatarImageView.af_setImage(
-                withURL: URL(string: item.profile_picture)!,
+                withURL: URL(string: item.user.avatar)!,
                 placeholderImage: UIImage.init(named: "avatar"),
                 filter: AspectScaledToFillSizeWithRoundedCornersFilter(size: size, radius: 30.0),
                 imageTransition: .crossDissolve(0.2)
             )
         }
 
-        self.userNameLabel.text = item.userName
+        self.userNameLabel.text = item.user.userName
         
         if item.time < 60 {
             self.timeLabel.text = String(format: "%ds ago", item.time)
@@ -80,6 +81,9 @@ class DGFeedCell: UITableViewCell {
     }
     @IBAction func profileAction(_ sender: Any) {
         self.delegate?.didProfileWithItem(item: self.recipeItem!)
+    }
+    @IBAction func detailAction(_ sender: Any) {
+        self.delegate?.didDetailWithItem(item: self.recipeItem!)
     }
     
     

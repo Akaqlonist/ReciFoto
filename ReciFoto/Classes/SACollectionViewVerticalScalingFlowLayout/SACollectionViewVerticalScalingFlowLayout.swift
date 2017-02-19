@@ -39,8 +39,8 @@ public enum SACollectionViewVerticalScalingFlowLayoutScaleMode {
 open class SACollectionViewVerticalScalingFlowLayout : UICollectionViewFlowLayout {
     
     fileprivate struct Const {
-        static let minimumInteritemSpacing: CGFloat = 25
-        static let minimumLineSpacing: CGFloat = 25
+        static let minimumInteritemSpacing: CGFloat = 5
+        static let minimumLineSpacing: CGFloat = 5
     }
     
     open var scaleMode: SACollectionViewVerticalScalingFlowLayoutAlphaMode = .easy

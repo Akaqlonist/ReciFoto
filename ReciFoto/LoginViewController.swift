@@ -84,24 +84,13 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
             do{
                 let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
                 let status = jsonResponse[Constants.STATUS_KEY] as! String
+                print(jsonResponse)
                 if status == "1"{
                     let result = jsonResponse[Constants.RESULT_KEY] as! [String : AnyObject]
-                    
-                    Profile.user_id = result[Constants.USER_ID_KEY] as! String
-                    Profile.session_id = result[Constants.USER_SESSION_KEY] as! String
-                    Profile.user_email = result[Constants.USER_EMAIL_KEY] as! String
-                    Profile.user_name = result[Constants.USER_NAME_KEY] as! String
-                    let userProfile = result[Constants.PROFILE_KEY] as! [String : AnyObject]
-                    if let user_bio = userProfile[Constants.USER_BIO_KEY] as? String{
-                        Profile.user_bio = user_bio
-                    }else{
-                        Profile.user_bio = ""
-                    }
-                    if let user_picture = userProfile[Constants.PICTURE_KEY] as? String{
-                        Profile.user_picture = user_picture
-                    }else{
-                        Profile.user_picture = ""
-                    }
+                    print(result)
+                    let user = result[Constants.USER_KEY] as! NSDictionary
+                    Me.session_id = user[Constants.USER_SESSION_KEY] as! String
+                    Me.user = User(dict: user)
                     
                     let appDelegate = UIApplication.shared.delegate as! AppDelegate
                     
