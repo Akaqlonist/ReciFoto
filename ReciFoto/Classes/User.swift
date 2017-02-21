@@ -33,10 +33,14 @@ struct User {
         userBio = ""
         userPhone = ""
     }
-    init(id: String, username: String, avatar : String){
+    init(id: String, username: String, avatar : String?){
         self.id = id
         self.userName = username
-        self.avatar = avatar
+        if (avatar != nil) {
+            self.avatar = avatar!
+        }else{
+            self.avatar = ""
+        }
         userEmail = ""
         userBio = ""
         userPhone = ""

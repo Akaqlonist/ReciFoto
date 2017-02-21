@@ -46,6 +46,7 @@ class ViewController: UIViewController {
                 
                 do{
                     let jsonResponse = try JSONSerialization.jsonObject(with: data!, options: []) as! [String : Any]
+                    print(jsonResponse)
 //                    ["username" : txtUsername.text!, "email" : txtEmail.text!, "password" : txtPassword.text!]
                     var parameters : [String : String] = [:]
                     parameters[Constants.USER_NAME_KEY] = jsonResponse[Constants.SCREEN_NAME_KEY] as? String

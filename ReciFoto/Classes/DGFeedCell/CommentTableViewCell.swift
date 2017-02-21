@@ -10,7 +10,7 @@ import UIKit
 
 class CommentTableViewCell: UITableViewCell {
     
-    private static let AvatarPlaceholder = UIImage(named: "avatar_placeholder")
+    private static let AvatarPlaceholder = UIImage(named: "avatar")
     private static let AvatarSize = 35
     private let authorLabel = UILabel()
     private let commentLabel = UILabel()

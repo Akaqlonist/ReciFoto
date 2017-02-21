@@ -173,6 +173,32 @@ extension ActivityViewController : DGFeedCellDelegaete{
         })
         
     }
+    func saveCollection(item: Recipe){
+        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.saveCollection),
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
+                                                             Constants.RECIPE_ID_KEY : item.identifier])
+        print(Me.user.id)
+        print(Me.session_id)
+        apiRequest.responseString(completionHandler: { response in
+            do{
+                print(response)
+                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
+                print(jsonResponse)
+                let status = jsonResponse[Constants.STATUS_KEY] as! String
+                
+                if status == "1"{
+                    print(jsonResponse)
+                }else {
+                    
+                }
+            }catch{
+                print("Error Parsing JSON from recipe_like")
+            }
+            
+        })
+    }
+
     func didMoreWithItem(item: Recipe) {
         let actionSheetController = UIAlertController(title: "ReciFoto", message: "", preferredStyle: .actionSheet)
         
@@ -183,12 +209,44 @@ extension ActivityViewController : DGFeedCellDelegaete{
         
         let saveActionButton = UIAlertAction(title: "Save to Collection", style: .default) { action -> Void in
             print("Save")
+            let product = RecifotoProducts.products[0]
+            
+            if RecifotoProducts.store.isProductPurchased(product.productIdentifier){
+                self.saveCollection(item: item)
+            }else{
+                RecifotoProducts.boughtRecipe = item
+                RecifotoProducts.store.buyProduct(product)
+            }
         }
         actionSheetController.addAction(saveActionButton)
         
         let reportActionButton = UIAlertAction(title: "Report Inappropriate", style: .default) { action -> Void in
             print("Report Inappropriate")
+            let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.reportInappropriate),
+                                     method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                                 Constants.USER_SESSION_KEY : Me.session_id,
+                                                                 Constants.RECIPE_ID_KEY : item.identifier])
+            print(Me.user.id)
+            print(Me.session_id)
+            apiRequest.responseString(completionHandler: { response in
+                do{
+                    print(response)
+                    let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
+                    print(jsonResponse)
+                    let status = jsonResponse[Constants.STATUS_KEY] as! String
+                    
+                    if status == "1"{
+                        print(jsonResponse)
+                    }else {
+                        
+                    }
+                }catch{
+                    print("Error Parsing JSON from recipe_like")
+                }
+                
+            })
         }
+
         actionSheetController.addAction(reportActionButton)
         
         self.present(actionSheetController, animated: true, completion: nil)

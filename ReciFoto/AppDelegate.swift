@@ -23,7 +23,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         Fabric.with([Crashlytics.self, Twitter.self])
-
+        prefetchProducts()
         UIApplication.shared.registerForRemoteNotifications()
         if hasLoginInfo() {
             loadFromUserDefaults()
@@ -92,6 +92,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let defaults = UserDefaults.standard
         
         Me.session_id = defaults.string(forKey: Constants.USER_SESSION_KEY)!
+        Me.user = User()
         Me.user.userName = defaults.string(forKey: Constants.USER_NAME_KEY)!
         Me.user.id = defaults.string(forKey: Constants.USER_ID_KEY)!
         Me.user.userEmail = defaults.string(forKey: Constants.USER_EMAIL_KEY)!
@@ -106,6 +107,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
     func hasLoginInfo() -> Bool{
+        print(UserDefaults.standard.bool(forKey: Constants.HAS_LOGIN_KEY))
         return UserDefaults.standard.bool(forKey: Constants.HAS_LOGIN_KEY)
     }
     func setHasLoginInfo(status: Bool) {

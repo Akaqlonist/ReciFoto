@@ -74,7 +74,10 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        self.collectionView.reloadData()
+    }
     func trendsAPI(didFinishedWithResult: @escaping(Int) -> Void){
         self.currentMode = .trends
         self.lblNoResult.isHidden = true
@@ -214,6 +217,7 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         default:
             assert(false)
         }
+        return UICollectionViewCell()
     }
     
     internal func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -256,6 +260,7 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         default:
             assert(false)
         }
+        return 0
     }
     
     internal func numberOfSections(in collectionView: UICollectionView) -> Int {
@@ -277,6 +282,7 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         default:
             assert(false)
         }
+        return UIEdgeInsets.zero
     }
     
     internal func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
@@ -313,6 +319,7 @@ class SearchViewController: UIViewController, UICollectionViewDataSource, UIColl
         default:
             assert(false)
         }
+        return CGSize.zero
     }
     
     // MARK: - UIScrollViewDelegate

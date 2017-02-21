@@ -72,5 +72,11 @@ struct Constants{
     static let SEARCH_KEY = "search_key"
     static let TOUSERID_KEY = "toUserId"
     static let USER_KEY = "user"
+    
+// IAP Keys
+    
+    
+// Notification Names
+    static let NOTIFICATION_PURCHASE_PRODUCT = "purchase_product"
 
 }

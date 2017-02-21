@@ -15,6 +15,9 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         self.navigationItem.title = "Settings"
+        NotificationCenter.default.addObserver(self, selector: #selector(SettingsViewController.handlePurchaseNotification(_:)),
+                                               name: NSNotification.Name(rawValue: IAPHelper.IAPHelperPurchaseNotification),
+                                               object: nil)
 //        self.navigationItem.setHidesBackButton(true, animated: false)
     }
     
@@ -22,7 +25,16 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
+    func handlePurchaseNotification(_ notification: Notification) {
+        guard let productID = notification.object as? String else { return }
+        
+        for (_, product) in RecifotoProducts.products.enumerated() {
+            guard product.productIdentifier == productID else { continue }
+            let alertController = UIAlertController(title: "ReciFoto", message: "Save Collection Purchase successfully restored.", preferredStyle: UIAlertControllerStyle.alert)
+            alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+            self.present(alertController, animated: true, completion: nil)
+        }
+    }
     @IBAction func backAction(_ sender: Any) {
         _ = self.navigationController?.popViewController(animated: true)
     }
@@ -54,6 +66,15 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
     }
     
     @IBAction func iapAction(_ sender: Any) {
+        let product = RecifotoProducts.products[0]
+        
+        if RecifotoProducts.store.isProductPurchased(product.productIdentifier){
+            let alertController = UIAlertController(title: "ReciFoto", message: "You already purchased Save Collection", preferredStyle: UIAlertControllerStyle.alert)
+            alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+            self.present(alertController, animated: true, completion: nil)
+        }else{
+            RecifotoProducts.store.restorePurchases()
+        }
     }
     @IBAction func amazonStoreAction(_ sender: Any) {
         if let url = URL(string: "http://astore.amazon.com/recifoto-20/") {

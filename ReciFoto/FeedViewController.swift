@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import StoreKit
+
 class FeedViewController: UITableViewController {
     
     var feedList: [Recipe] = []
@@ -24,6 +26,12 @@ class FeedViewController: UITableViewController {
         
         //Set Title
         self.navigationItem.title = "Public Recipe List"
+        
+        // Register Notification
+        NotificationCenter.default.addObserver(self, selector: #selector(FeedViewController.handlePurchaseNotification(_:)),
+                                               name: NSNotification.Name(rawValue: IAPHelper.IAPHelperPurchaseNotification),
+                                               object: nil)
+
         
         var header: ESRefreshProtocol & ESRefreshAnimatorProtocol
         var footer: ESRefreshProtocol & ESRefreshAnimatorProtocol
@@ -145,6 +153,17 @@ class FeedViewController: UITableViewController {
 
 }
 extension FeedViewController : DGFeedCellDelegaete{
+   
+    func handlePurchaseNotification(_ notification: Notification) {
+        guard let productID = notification.object as? String else { return }
+        
+        for (_, product) in RecifotoProducts.products.enumerated() {
+            guard product.productIdentifier == productID else { continue }
+            if RecifotoProducts.boughtRecipe.identifier != ""{
+                saveCollection(item: RecifotoProducts.boughtRecipe)
+            }
+        }
+    }
     func didLikeWithItem(item: Recipe) {
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.recipeLikeV2),
                                  method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
@@ -170,6 +189,31 @@ extension FeedViewController : DGFeedCellDelegaete{
         })
         
     }
+    func saveCollection(item: Recipe){
+        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.saveCollection),
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
+                                                             Constants.RECIPE_ID_KEY : item.identifier])
+        print(Me.user.id)
+        print(Me.session_id)
+        apiRequest.responseString(completionHandler: { response in
+            do{
+                print(response)
+                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
+                print(jsonResponse)
+                let status = jsonResponse[Constants.STATUS_KEY] as! String
+                
+                if status == "1"{
+                    print(jsonResponse)
+                }else {
+                    
+                }
+            }catch{
+                print("Error Parsing JSON from recipe_like")
+            }
+            
+        })
+    }
     func didMoreWithItem(item: Recipe) {
 
         let actionSheetController = UIAlertController(title: "ReciFoto", message: "Choose your action", preferredStyle: .actionSheet)
@@ -181,29 +225,14 @@ extension FeedViewController : DGFeedCellDelegaete{
         
         let saveActionButton = UIAlertAction(title: "Save to Collection", style: .default) { action -> Void in
             print("Save")
-            let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.saveCollection),
-                                     method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
-                                                                 Constants.USER_SESSION_KEY : Me.session_id,
-                                                                 Constants.RECIPE_ID_KEY : item.identifier])
-            print(Me.user.id)
-            print(Me.session_id)
-            apiRequest.responseString(completionHandler: { response in
-                do{
-                    print(response)
-                    let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                    print(jsonResponse)
-                    let status = jsonResponse[Constants.STATUS_KEY] as! String
-                    
-                    if status == "1"{
-                        print(jsonResponse)
-                    }else {
-                        
-                    }
-                }catch{
-                    print("Error Parsing JSON from recipe_like")
-                }
-                
-            })
+            let product = RecifotoProducts.products[0]
+            
+            if RecifotoProducts.store.isProductPurchased(product.productIdentifier){
+                self.saveCollection(item: item)
+            }else{
+                RecifotoProducts.boughtRecipe = item
+                RecifotoProducts.store.buyProduct(product)
+            }
         }
         actionSheetController.addAction(saveActionButton)
         

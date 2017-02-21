@@ -7,8 +7,11 @@
 //
 
 import UIKit
+import FBSDKShareKit
+import TwitterKit
+import TwitterCore
 
-class RecipeViewController: UIViewController,UITableViewDelegate, UITableViewDataSource, UIScrollViewDelegate {
+class RecipeViewController: UIViewController, UIScrollViewDelegate, FBSDKSharingDelegate,UITextViewDelegate {
     var recipe : Recipe = Recipe()
     
     @IBOutlet weak var titleLabel: UILabel!
@@ -19,15 +22,31 @@ class RecipeViewController: UIViewController,UITableViewDelegate, UITableViewDat
     @IBOutlet weak var lblLikes: UILabel!
     @IBOutlet weak var lblComments: UILabel!
     @IBOutlet weak var imgScrollView: UIScrollView!
-    @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var commentView: UIView!
+    private let textView: UITextView = {
+        let textView = UITextView()
+        textView.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.body)
+        return textView
+    }()
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         self.navigationItem.title = "Recipe Detail"
-        tableView.register(MinimumCommentTableViewCell.self, forCellReuseIdentifier: String(describing: MinimumCommentTableViewCell.self))
         
         let shareButton = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(RecipeViewController.shareAction))
         self.navigationItem.rightBarButtonItem = shareButton
+        NotificationCenter.default.addObserver(self, selector: #selector(RecipeViewController.handlePurchaseNotification(_:)),
+                                               name: NSNotification.Name(rawValue: IAPHelper.IAPHelperPurchaseNotification),
+                                               object: nil)
+        self.commentView.addSubview(textView)
+        textView.delegate = self
+        textView.snp.makeConstraints { (make) in
+            make.edges.equalTo(self.commentView)
+        }
+        
+        [NSNotification.Name.UIKeyboardWillShow, NSNotification.Name.UIKeyboardWillChangeFrame, NSNotification.Name.UIKeyboardWillHide].forEach { (name) in
+            NotificationCenter.default.addObserver(self, selector: #selector(keyboardFrameDidChange(_:)), name: name, object: nil)
+        }
         
         loadRecipe()
     }
@@ -35,6 +54,27 @@ class RecipeViewController: UIViewController,UITableViewDelegate, UITableViewDat
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        
+    }
+    @objc private func keyboardFrameDidChange(_ notification: Notification) {
+        guard let frame = notification.userInfo?[UIKeyboardFrameEndUserInfoKey] as? NSValue else {
+            return
+        }
+        
+        textView.snp.updateConstraints { (make) in
+            make.bottom.equalTo(self.commentView).inset(frame.cgRectValue.height)
+        }
+    }
+    func handlePurchaseNotification(_ notification: Notification) {
+        guard let productID = notification.object as? String else { return }
+        
+        for (_, product) in RecifotoProducts.products.enumerated() {
+            guard product.productIdentifier == productID else { continue }
+            self.saveCollection()
+        }
     }
     func loadRecipe(){
         self.titleLabel.text = recipe.title
@@ -72,7 +112,6 @@ class RecipeViewController: UIViewController,UITableViewDelegate, UITableViewDat
         }
         self.lblLikes.text = String(format: "%d", recipe.likes_count)
         self.lblComments.text = String(format: "%d",recipe.comment_count)
-        self.tableView.reloadData()
     }
     func shareAction(){
         let actionSheetController = UIAlertController(title: "ReciFoto", message: "Choose your action", preferredStyle: .actionSheet)
@@ -83,17 +122,46 @@ class RecipeViewController: UIViewController,UITableViewDelegate, UITableViewDat
         actionSheetController.addAction(cancelActionButton)
         
         let facebookActionButton = UIAlertAction(title: "Share to Facebook", style: .default) { action -> Void in
-            print("FB Share")
-            
+            let content : FBSDKShareLinkContent = FBSDKShareLinkContent()
+            content.contentTitle = "Recifoto"
+            content.contentDescription = self.recipe.title
+            content.contentURL = URL(string: self.recipe.imageURL)
+            FBSDKShareDialog.show(from: self, with: content, delegate: self)
         }
         actionSheetController.addAction(facebookActionButton)
         
         let twitterActionButton = UIAlertAction(title: "Share to Twitter", style: .default) { action -> Void in
-            print("TW Share")
+//            if let twSession = Twitter.sharedInstance().sessionStore.session(){
+                let composer = TWTRComposer()
+                
+                composer.setText(self.recipe.title)
+                composer.setImage(self.contentImageView.image)
+            
+                // Called from a UIViewController
+                composer.show(from: self, completion: { result in
+                    print(result)
+                    if (result == TWTRComposerResult.cancelled) {
+                        print("Tweet composition cancelled")
+                    }
+                    else {
+                        print("Sending tweet!")
+                    }
+                })
+//            }
         }
         actionSheetController.addAction(twitterActionButton)
         
         self.present(actionSheetController, animated: true, completion: nil)
+    }
+    func sharer(_ sharer: FBSDKSharing!, didCompleteWithResults results: [AnyHashable : Any]!) {
+        print("fb share success")
+    }
+    func sharer(_ sharer: FBSDKSharing!, didFailWithError error: Error!) {
+        print(error)
+        print("fb share failed")
+    }
+    func sharerDidCancel(_ sharer: FBSDKSharing!) {
+        print("fb share canceled")
     }
     @IBAction func profileAction(_ sender: Any) {
         if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "profileVC") as? ProfileViewController {
@@ -102,6 +170,15 @@ class RecipeViewController: UIViewController,UITableViewDelegate, UITableViewDat
                 viewController.user = recipe.user
                 navigator.pushViewController(viewController, animated: true)
             }
+        }
+    }
+    @IBAction func saveAction(_ sender: Any) {
+        let product = RecifotoProducts.products[0]
+        
+        if RecifotoProducts.store.isProductPurchased(product.productIdentifier){
+            self.saveCollection()
+        }else{
+            RecifotoProducts.store.buyProduct(product)
         }
     }
     @IBAction func moreAction(_ sender: Any) {
@@ -114,29 +191,13 @@ class RecipeViewController: UIViewController,UITableViewDelegate, UITableViewDat
         
         let saveActionButton = UIAlertAction(title: "Save to Collection", style: .default) { action -> Void in
             print("Save")
-            let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.saveCollection),
-                                     method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
-                                                                 Constants.USER_SESSION_KEY : Me.session_id,
-                                                                 Constants.RECIPE_ID_KEY : self.recipe.identifier])
-            print(Me.user.id)
-            print(Me.session_id)
-            apiRequest.responseString(completionHandler: { response in
-                do{
-                    print(response)
-                    let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                    print(jsonResponse)
-                    let status = jsonResponse[Constants.STATUS_KEY] as! String
-                    
-                    if status == "1"{
-                        print(jsonResponse)
-                    }else {
-                        
-                    }
-                }catch{
-                    print("Error Parsing JSON from recipe_like")
-                }
-                
-            })
+            let product = RecifotoProducts.products[0]
+            
+            if RecifotoProducts.store.isProductPurchased(product.productIdentifier){
+                self.saveCollection()
+            }else{
+                RecifotoProducts.store.buyProduct(product)
+            }
         }
         actionSheetController.addAction(saveActionButton)
         
@@ -206,32 +267,51 @@ class RecipeViewController: UIViewController,UITableViewDelegate, UITableViewDat
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return contentImageView
     }
-    func scrollViewWillBeginZooming(_ scrollView: UIScrollView, with view: UIView?) {
-        
+    func saveCollection(){
+        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.saveCollection),
+                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                             Constants.USER_SESSION_KEY : Me.session_id,
+                                                             Constants.RECIPE_ID_KEY : recipe.identifier])
+        print(Me.user.id)
+        print(Me.session_id)
+        apiRequest.responseString(completionHandler: { response in
+            do{
+                print(response)
+                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
+                print(jsonResponse)
+                let status = jsonResponse[Constants.STATUS_KEY] as! String
+                
+                if status == "1"{
+                    print(jsonResponse)
+                }else {
+                    
+                }
+            }catch{
+                print("Error Parsing JSON from recipe_like")
+            }
+            
+        })
     }
-    func scrollViewDidZoom(_ scrollView: UIScrollView) {
-        
-    }
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return recipe.comments.count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: String(describing: MinimumCommentTableViewCell.self), for: indexPath) as! MinimumCommentTableViewCell
-        let comment = recipe.comments[indexPath.row]
-        cell.configure(with: comment)
-        return cell
-    }
-    
-    // MARK: UITableViewDelegate
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-    }
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 100
-    }
-    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableViewAutomaticDimension
-    }
+//    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+//        return recipe.comments.count
+//    }
+//    
+//    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+//        let cell = tableView.dequeueReusableCell(withIdentifier: String(describing: MinimumCommentTableViewCell.self), for: indexPath) as! MinimumCommentTableViewCell
+//        let comment = recipe.comments[indexPath.row]
+//        cell.configure(with: comment)
+//        return cell
+//    }
+//    
+//    // MARK: UITableViewDelegate
+//    
+//    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+//        tableView.deselectRow(at: indexPath, animated: true)
+//    }
+//    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+//        return 100
+//    }
+//    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+//        return UITableViewAutomaticDimension
+//    }
 }

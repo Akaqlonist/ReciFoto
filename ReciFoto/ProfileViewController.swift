@@ -8,13 +8,14 @@
 
 import UIKit
 
-class ProfileViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource {
+class ProfileViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource,UICollectionViewDelegateFlowLayout {
     var feedList: [Recipe] = []
     var currentIndex = 0
     var settingButton : UIBarButtonItem?//()
+    var followButton : UIBarButtonItem?
     var user = Me.user
     
-    fileprivate let kCellIdentifier = "Cell"
+    fileprivate let kCellIdentifier = "pCollectionCell"
     fileprivate var scrolling = false
     
     @IBOutlet weak var collectionView: UICollectionView!
@@ -34,26 +35,36 @@ class ProfileViewController: UIViewController, UICollectionViewDelegate, UIColle
             settingImage = settingImage?.withRenderingMode(.alwaysOriginal)
             settingButton = UIBarButtonItem(image: settingImage, style: UIBarButtonItemStyle.plain, target: self, action: #selector(ProfileViewController.settingAction))
             self.navigationItem.rightBarButtonItem = settingButton
+        }else{
+            followButton = UIBarButtonItem(title: "Follow", style: .plain, target: self, action: #selector(ProfileViewController.followAction))
+            self.navigationItem.rightBarButtonItem = followButton
         }
         loadFromServer()
         
-        collectionView.register(SACollectionViewVerticalScalingCell.self, forCellWithReuseIdentifier: kCellIdentifier)
-        
-        guard let layout = collectionView.collectionViewLayout as? SACollectionViewVerticalScalingFlowLayout else {
-            return
-        }
-        
-        layout.scaleMode = .hard
-        layout.alphaMode = .easy
-        layout.scrollDirection = .vertical
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        self.collectionView.reloadData()
+    }
     func settingAction(){
         self.performSegue(withIdentifier: "showSettings", sender: self)
+    }
+    func followAction(){
+        
+    }
+    @IBAction func editAction(_ sender: Any) {
+        if user.id == Me.user.id {
+            if let navigator = navigationController {
+                
+                navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+                navigator.pushViewController(EditProfileViewController(), animated: true)
+            }
+        }
     }
     func loadFromServer(){
         if profileAPIByIndex(index: currentIndex) == 1{
@@ -116,7 +127,6 @@ class ProfileViewController: UIViewController, UICollectionViewDelegate, UIColle
         return 1
     }
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        print(collectionView)
         return self.feedList.count
     }
     
@@ -124,15 +134,17 @@ class ProfileViewController: UIViewController, UICollectionViewDelegate, UIColle
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: kCellIdentifier, for: indexPath)
         
-        if let cell = cell as? SACollectionViewVerticalScalingCell {
+        if let cell = cell as? CollectionCell {
             
-            let imageView = UIImageView(frame: cell.bounds)
-            let item = self.feedList[indexPath.row] 
-            imageView.af_setImage(withURL: URL(string: item.imageURL)!)
-            cell.containerView?.addSubview(imageView)
+            let item = self.feedList[indexPath.row]
+            cell.imageView.af_setImage(withURL: URL(string: item.imageURL)!)
         }
-        
         return cell
+    }
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let size = CGSize(width: self.view.frame.size.width, height: self.view.frame.size.width)
+        
+        return size
     }
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let recipe = self.feedList[indexPath.row]

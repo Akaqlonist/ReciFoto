@@ -9,7 +9,7 @@
 import UIKit
 class CollectionsViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
     var feedList: [Recipe] = []
-    fileprivate let kCellIdentifier = "Cell"
+    fileprivate let kCellIdentifier = "CollectionCell"
     
     fileprivate var scrolling = false
     var currentIndex = 0
@@ -19,45 +19,21 @@ class CollectionsViewController: UICollectionViewController, UICollectionViewDel
         // Do any additional setup after loading the view, typically from a nib.
         self.navigationItem.title = "My Collection"
         
-        collectionView?.register(SACollectionViewVerticalScalingCell.self, forCellWithReuseIdentifier: kCellIdentifier)
         
-        guard let layout = collectionView?.collectionViewLayout as? SACollectionViewVerticalScalingFlowLayout else {
-            return
-        }
-        
-        layout.scaleMode = .hard
-        layout.alphaMode = .easy
-        layout.scrollDirection = .vertical
-        
-//        var header: ESRefreshProtocol & ESRefreshAnimatorProtocol
-//        var footer: ESRefreshProtocol & ESRefreshAnimatorProtocol
-//        
-//        header = ESRefreshHeaderAnimator.init(frame: CGRect.zero)
-//        footer = ESRefreshFooterAnimator.init(frame: CGRect.zero)
-        
-//        self.collectionView?.es_addPullToRefresh(animator: header) { [weak self] in
-//            self?.refreshFeed()
-//        }
-//        self.collectionView?.es_addInfiniteScrolling(animator: footer) { [weak self] in
-//            self?.loadMore()
-//        }
-//        self.collectionView?.refreshIdentifier = String.init(describing: "default")
-//        self.collectionView?.expriedTimeInterval = 20.0
-//        
-//        self.collectionView?.es_startPullToRefresh()
-//        self.collectionView?.es_addPullToRefresh {
+        self.collectionView?.es_addPullToRefresh {
             self.refreshFeed()
-//        }
-//        self.collectionView?.es_startPullToRefresh()
-//        self.collectionView?.es_addInfiniteScrolling {
-//            self.loadMore()
-//        }
+        }
+        self.collectionView?.es_startPullToRefresh()
+        self.collectionView?.es_addInfiniteScrolling {
+            self.loadMore()
+        }
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
     private func refreshFeed() {
         DispatchQueue.main.asyncAfter(deadline: .now()) {
             self.feedList.removeAll()
@@ -140,15 +116,17 @@ class CollectionsViewController: UICollectionViewController, UICollectionViewDel
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: kCellIdentifier, for: indexPath)
         
-        if let cell = cell as? SACollectionViewVerticalScalingCell {
-            
-            let imageView = UIImageView(frame: cell.bounds)
+        if let cell = cell as? CollectionCell {
+        
             let item = self.feedList[indexPath.row]
-            imageView.af_setImage(withURL: URL(string: item.imageURL)!)
-            print(cell.containerView ?? "nil", indexPath.row)
-            cell.containerView?.addSubview(imageView)
+            cell.imageView.af_setImage(withURL: URL(string: item.imageURL)!)
         }
         return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let size = CGSize(width: (self.collectionView?.frame.size.width)!, height: (self.collectionView?.frame.size.width)!)
+        return size
     }
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let recipe = self.feedList[indexPath.row] 
