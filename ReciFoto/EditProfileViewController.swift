@@ -34,14 +34,14 @@ final class EditProfileViewController: FormViewController {
     }()
     
     private lazy var informationSection: SectionFormer = {
-        let nicknameRow = TextFieldRowFormer<ProfileFieldCell>(instantiateType: .Nib(nibName: "ProfileFieldCell")) { [weak self] in
+        let usernameRow = TextFieldRowFormer<ProfileFieldCell>(instantiateType: .Nib(nibName: "ProfileFieldCell")) { [weak self] in
             $0.titleLabel.text = "Username"
             $0.textField.inputAccessoryView = self?.formerInputAccessoryView
             }.configure {
                 $0.placeholder = "Your Username"
-//                $0.text = Profile.sharedInstance.nickname
+                $0.text = Me.user.userName
             }.onTextChanged {_ in
-//                Profile.sharedInstance.nickname = $0
+//                Me.user.userName = $0.text
         }
         
         let phoneRow = TextFieldRowFormer<ProfileFieldCell>(instantiateType: .Nib(nibName: "ProfileFieldCell")) { [weak self] in
@@ -50,11 +50,11 @@ final class EditProfileViewController: FormViewController {
             $0.textField.inputAccessoryView = self?.formerInputAccessoryView
             }.configure {
                 $0.placeholder = "Add your phone number"
-//                $0.text = Profile.sharedInstance.phoneNumber
+                $0.text = Me.user.userPhone
             }.onTextChanged {_ in
-//                Profile.sharedInstance.phoneNumber = $0
+//                Me.user.userPhone = $0.text
         }
-        return SectionFormer(rowFormer: nicknameRow, phoneRow)
+        return SectionFormer(rowFormer: usernameRow, phoneRow)
     }()
     
     private func configure() {
@@ -69,14 +69,14 @@ final class EditProfileViewController: FormViewController {
             $0.textField.inputAccessoryView = self?.formerInputAccessoryView
             }.configure {
                 $0.placeholder = "Add your name"
-//                $0.text = Profile.sharedInstance.name
+                $0.text = Me.user.userName
             }.onTextChanged {_ in
-//                Profile.sharedInstance.name = $0
+//                Me.user.userFullName = $0.text
         }
         
         let birthdayRow = InlineDatePickerRowFormer<ProfileLabelCell>(instantiateType: .Nib(nibName: "ProfileLabelCell")) {
             $0.titleLabel.text = "Birthday"
-            }.configure {_ in 
+            }.configure {_ in
 //                $0.date = Profile.sharedInstance.birthDay ?? Date()
             }.inlineCellSetup {
                 $0.datePicker.datePickerMode = .date
@@ -91,9 +91,9 @@ final class EditProfileViewController: FormViewController {
             $0.textView.inputAccessoryView = self?.formerInputAccessoryView
             }.configure {
                 $0.placeholder = "Add your self-introduction"
-//                $0.text = Profile.sharedInstance.introduction
+                $0.text = Me.user.userBio
             }.onTextChanged {_ in
-//                Profile.sharedInstance.introduction = $0
+//                Me.user.userBio = $0.text
         }
         
         // Create Headers
@@ -114,16 +114,12 @@ final class EditProfileViewController: FormViewController {
             .set(headerViewFormer: createHeader("Introduction"))
         let aboutSection = SectionFormer(rowFormer: nameRow, birthdayRow)
             .set(headerViewFormer: createHeader("About"))
-//        let moreSection = SectionFormer(rowFormer: moreRow)
-//            .set(headerViewFormer: createHeader("More Infomation"))
         
         former.append(sectionFormer: imageSection, introductionSection, aboutSection)
             .onCellSelected { [weak self] _ in
                 self?.formerInputAccessoryView.update()
         }
-//        if Profile.sharedInstance.moreInformation {
-            former.append(sectionFormer: informationSection)
-//        }
+        former.append(sectionFormer: informationSection)
     }
     
     private func presentImagePicker() {
@@ -132,14 +128,6 @@ final class EditProfileViewController: FormViewController {
         picker.sourceType = .photoLibrary
         picker.allowsEditing = false
         present(picker, animated: true, completion: nil)
-    }
-    
-    private func switchInfomationSection() {
-//        if Profile.sharedInstance.moreInformation {
-//            former.insertUpdate(sectionFormer: informationSection, toSection: former.numberOfSections, rowAnimation: .top)
-//        } else {
-//            former.removeUpdate(sectionFormer: informationSection, rowAnimation: .top)
-//        }
     }
 }
 

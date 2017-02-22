@@ -16,6 +16,7 @@ struct User {
     var userEmail : String
     var userBio : String
     var userPhone : String
+    var userFullName : String
     
     init(){
         id = ""
@@ -24,6 +25,7 @@ struct User {
         userEmail = ""
         userBio = ""
         userPhone = ""
+        userFullName = ""
     }
     init(id: String) {
         self.id = id
@@ -32,6 +34,7 @@ struct User {
         userEmail = ""
         userBio = ""
         userPhone = ""
+        userFullName = ""
     }
     init(id: String, username: String, avatar : String?){
         self.id = id
@@ -44,6 +47,7 @@ struct User {
         userEmail = ""
         userBio = ""
         userPhone = ""
+        userFullName = ""
     }
     init (dict: NSDictionary){
         id = dict[Constants.ID_KEY] as! String
@@ -64,5 +68,6 @@ struct User {
         }else{
             userPhone = ""
         }
+        userFullName = ""
     }
 }

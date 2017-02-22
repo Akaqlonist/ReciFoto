@@ -174,7 +174,6 @@
 		53E074861E301C5D00D09A9F /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E074851E301C5D00D09A9F /* ViewController.swift */; };
 		53E074891E301C5D00D09A9F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 53E074871E301C5D00D09A9F /* Main.storyboard */; };
 		53E0748C1E301C5D00D09A9F /* ReciFoto.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 53E0748A1E301C5D00D09A9F /* ReciFoto.xcdatamodeld */; };
-		53E0748E1E301C5D00D09A9F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 53E0748D1E301C5D00D09A9F /* Assets.xcassets */; };
 		53E074911E301C5D00D09A9F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 53E0748F1E301C5D00D09A9F /* LaunchScreen.storyboard */; };
 		53F0232A1E49AF6900180F37 /* RSKCollectionViewRetractableFirstItemLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F023271E49AF6800180F37 /* RSKCollectionViewRetractableFirstItemLayout.swift */; };
 		53F0232B1E49AF6900180F37 /* SearchCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F023281E49AF6800180F37 /* SearchCollectionViewCell.swift */; };
@@ -224,6 +223,7 @@
 		53F3A4241E4C6D78003E2425 /* PKCPhotoViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 53F3A3F81E4C6D78003E2425 /* PKCPhotoViewController.xib */; };
 		53F3A4261E4C6E56003E2425 /* PKCCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F3A4251E4C6E56003E2425 /* PKCCheck.swift */; };
 		53F438A61E57BEB400C4F6CE /* Recipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53F438A51E57BEB400C4F6CE /* Recipe.swift */; };
+		53F4B6431E5D8D57005D733E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 53F4B6421E5D8D57005D733E /* Assets.xcassets */; };
 		CB067A6A0A30E852D9E00401 /* Pods_ReciFoto.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D6F0C1757DFCF5EB75205041 /* Pods_ReciFoto.framework */; };
 /* End PBXBuildFile section */
 
@@ -399,7 +399,6 @@
 		53E074851E301C5D00D09A9F /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		53E074881E301C5D00D09A9F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		53E0748B1E301C5D00D09A9F /* ReciFoto.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = ReciFoto.xcdatamodel; sourceTree = "<group>"; };
-		53E0748D1E301C5D00D09A9F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		53E074901E301C5D00D09A9F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		53E074921E301C5D00D09A9F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		53E0749B1E301C5D00D09A9F /* ReciFotoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReciFotoTests.swift; sourceTree = "<group>"; };
@@ -454,6 +453,7 @@
 		53F3A3F81E4C6D78003E2425 /* PKCPhotoViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = PKCPhotoViewController.xib; sourceTree = "<group>"; };
 		53F3A4251E4C6E56003E2425 /* PKCCheck.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PKCCheck.swift; sourceTree = "<group>"; };
 		53F438A51E57BEB400C4F6CE /* Recipe.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Recipe.swift; sourceTree = "<group>"; };
+		53F4B6421E5D8D57005D733E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BB127AD3F68E395FF617D9EC /* Pods-ReciFoto.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ReciFoto.release.xcconfig"; path = "Pods/Target Support Files/Pods-ReciFoto/Pods-ReciFoto.release.xcconfig"; sourceTree = "<group>"; };
 		D6F0C1757DFCF5EB75205041 /* Pods_ReciFoto.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ReciFoto.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -849,11 +849,11 @@
 				53D9F3031E52F6A6006877E2 /* RecipeViewController.swift */,
 				53BE2DFE1E5474860035BF3E /* CollectionsViewController.swift */,
 				5381F2C21E5B6C6A00E71A77 /* EditProfileViewController.swift */,
-				53E0748D1E301C5D00D09A9F /* Assets.xcassets */,
 				53E0748F1E301C5D00D09A9F /* LaunchScreen.storyboard */,
 				53E074871E301C5D00D09A9F /* Main.storyboard */,
 				5304A5FD1E38E88E008DEA60 /* Fonts */,
 				53E074921E301C5D00D09A9F /* Info.plist */,
+				53F4B6421E5D8D57005D733E /* Assets.xcassets */,
 				53E0748A1E301C5D00D09A9F /* ReciFoto.xcdatamodeld */,
 				531B8DB01E3A181000E87C0E /* TermsPrivacy.html */,
 			);
@@ -1053,7 +1053,6 @@
 				53F3A4111E4C6D78003E2425 /* pkc_crop_rotate_right.png in Resources */,
 				5304A6211E38E88E008DEA60 /* AvantGarMedObl in Resources */,
 				53E074911E301C5D00D09A9F /* LaunchScreen.storyboard in Resources */,
-				53E0748E1E301C5D00D09A9F /* Assets.xcassets in Resources */,
 				53F3A4001E4C6D78003E2425 /* pkc_crop_exit.png in Resources */,
 				5304A6181E38E88E008DEA60 /* AvantGarBooObl in Resources */,
 				53F3A4131E4C6D78003E2425 /* pkc_crop_top_left.png in Resources */,
@@ -1074,6 +1073,7 @@
 				53F3A41A1E4C6D78003E2425 /* PKCCameraFilterCell.xib in Resources */,
 				5381F3341E5B6DF800E71A77 /* ProfileImageCell.xib in Resources */,
 				53F3A4151E4C6D78003E2425 /* pkc_crop_up_left.png in Resources */,
+				53F4B6431E5D8D57005D733E /* Assets.xcassets in Resources */,
 				53F3A40A1E4C6D78003E2425 /* pkc_crop_filter_tonal.png in Resources */,
 				53F3A3FB1E4C6D78003E2425 /* pkc_crop_bottom_right.png in Resources */,
 				531B8DB11E3A181000E87C0E /* TermsPrivacy.html in Resources */,

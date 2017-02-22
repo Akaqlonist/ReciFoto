@@ -11,7 +11,7 @@ import FBSDKShareKit
 import TwitterKit
 import TwitterCore
 
-class RecipeViewController: UIViewController, UIScrollViewDelegate, FBSDKSharingDelegate,UITextViewDelegate {
+class RecipeViewController: UIViewController, UIScrollViewDelegate, FBSDKSharingDelegate {
     var recipe : Recipe = Recipe()
     
     @IBOutlet weak var titleLabel: UILabel!
@@ -23,11 +23,10 @@ class RecipeViewController: UIViewController, UIScrollViewDelegate, FBSDKSharing
     @IBOutlet weak var lblComments: UILabel!
     @IBOutlet weak var imgScrollView: UIScrollView!
     @IBOutlet weak var commentView: UIView!
-    private let textView: UITextView = {
-        let textView = UITextView()
-        textView.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.body)
-        return textView
-    }()
+    
+    @IBOutlet weak var imgScrollConstraintEqualHeight: NSLayoutConstraint!
+    @IBOutlet weak var imgScrollConstraintEqualWidth: NSLayoutConstraint!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -38,17 +37,9 @@ class RecipeViewController: UIViewController, UIScrollViewDelegate, FBSDKSharing
         NotificationCenter.default.addObserver(self, selector: #selector(RecipeViewController.handlePurchaseNotification(_:)),
                                                name: NSNotification.Name(rawValue: IAPHelper.IAPHelperPurchaseNotification),
                                                object: nil)
-        self.commentView.addSubview(textView)
-        textView.delegate = self
-        textView.snp.makeConstraints { (make) in
-            make.edges.equalTo(self.commentView)
-        }
-        
-        [NSNotification.Name.UIKeyboardWillShow, NSNotification.Name.UIKeyboardWillChangeFrame, NSNotification.Name.UIKeyboardWillHide].forEach { (name) in
-            NotificationCenter.default.addObserver(self, selector: #selector(keyboardFrameDidChange(_:)), name: name, object: nil)
-        }
         
         loadRecipe()
+
     }
     
     override func didReceiveMemoryWarning() {
@@ -59,15 +50,42 @@ class RecipeViewController: UIViewController, UIScrollViewDelegate, FBSDKSharing
         super.viewWillLayoutSubviews()
         
     }
-    @objc private func keyboardFrameDidChange(_ notification: Notification) {
-        guard let frame = notification.userInfo?[UIKeyboardFrameEndUserInfoKey] as? NSValue else {
-            return
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        coordinator.animateAlongsideTransition(in: self.view, animation: { coordinatorContext in
+            let orient = UIApplication.shared.statusBarOrientation
+            
+            switch orient {
+            case .portrait:
+                print("Portrait")
+                self.applyPortraitConstraint()
+                break
+            // Do something
+            default:
+                print("LandScape")
+                // Do something else
+                self.applyLandscapeConstraint()
+                break
+            }
+        }) { coordinatorContext in
+            print("rotation completed")
         }
-        
-        textView.snp.updateConstraints { (make) in
-            make.bottom.equalTo(self.commentView).inset(frame.cgRectValue.height)
-        }
+
+        super.viewWillTransition(to: size, with: coordinator)
     }
+    
+    func applyPortraitConstraint(){
+        
+        self.view.addConstraint(self.imgScrollConstraintEqualWidth)
+        self.view.removeConstraint(self.imgScrollConstraintEqualHeight)
+        
+    }
+    func applyLandscapeConstraint(){
+        
+        self.view.addConstraint(self.imgScrollConstraintEqualHeight)
+        self.view.removeConstraint(self.imgScrollConstraintEqualWidth)
+        
+    }
+    
     func handlePurchaseNotification(_ notification: Notification) {
         guard let productID = notification.object as? String else { return }
         
@@ -132,21 +150,44 @@ class RecipeViewController: UIViewController, UIScrollViewDelegate, FBSDKSharing
         
         let twitterActionButton = UIAlertAction(title: "Share to Twitter", style: .default) { action -> Void in
 //            if let twSession = Twitter.sharedInstance().sessionStore.session(){
-                let composer = TWTRComposer()
-                
-                composer.setText(self.recipe.title)
-                composer.setImage(self.contentImageView.image)
+            let account = ACAccountStore()
+            let accountType = account.accountType(
+                withAccountTypeIdentifier: ACAccountTypeIdentifierTwitter)
             
-                // Called from a UIViewController
-                composer.show(from: self, completion: { result in
-                    print(result)
-                    if (result == TWTRComposerResult.cancelled) {
-                        print("Tweet composition cancelled")
+            account.requestAccessToAccounts(with: accountType, options: nil,
+                                            completion: {(success, error) in
+                                                
+                if success {
+                    // Get account and communicate with Twitter API
+                    let arrayOfAccounts =
+                        account.accounts(with: accountType)
+                    
+                    if (arrayOfAccounts?.count)! > 0 {
+                        let composer = TWTRComposer()
+                        
+                        composer.setText(self.recipe.title)
+                        composer.setImage(self.contentImageView.image)
+                        
+                        // Called from a UIViewController
+                        composer.show(from: self, completion: { result in
+                            print(result)
+                            if (result == TWTRComposerResult.cancelled) {
+                                print("Tweet composition cancelled")
+                            }
+                            else {
+                                print("Sending tweet!")
+                            }
+                        })
+                    }else{
+                        let settingsUrl = NSURL(string:UIApplicationOpenSettingsURLString) as! URL
+                        UIApplication.shared.open(settingsUrl, options: [:], completionHandler: nil)
                     }
-                    else {
-                        print("Sending tweet!")
-                    }
-                })
+                    
+                }else{
+                    print(error ?? "error on account twitter")
+                }
+            })
+            
 //            }
         }
         actionSheetController.addAction(twitterActionButton)
