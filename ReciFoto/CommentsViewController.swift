@@ -25,7 +25,14 @@ class CommentsViewController: UIViewController, UITableViewDelegate, UITableView
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        title = "Comments"
+//        title = "Comments"
+        let titleButton =  UIButton(type: .custom)
+        titleButton.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
+        titleButton.backgroundColor = UIColor.clear
+        titleButton.setTitle("Comments", for: .normal)
+        titleButton.addTarget(self, action: #selector(self.clickOnTitleButton), for: .touchUpInside)
+        self.navigationItem.titleView = titleButton
+        
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .compose, target: self, action: #selector(composePost))
         
         tableView.register(CommentTableViewCell.self, forCellReuseIdentifier: String(describing: CommentTableViewCell.self))
@@ -36,17 +43,23 @@ class CommentsViewController: UIViewController, UITableViewDelegate, UITableView
         tableView.snp.makeConstraints { (make) in
             make.edges.equalTo(view)
         }
-        var header: ESRefreshProtocol & ESRefreshAnimatorProtocol
-        var footer: ESRefreshProtocol & ESRefreshAnimatorProtocol
-        
-        header = ESRefreshHeaderAnimator.init(frame: CGRect.zero)
-        footer = ESRefreshFooterAnimator.init(frame: CGRect.zero)
-        self.tableView.es_addPullToRefresh(animator: header) { [weak self] in
-            self?.refreshFeed()
+//        var header: ESRefreshProtocol & ESRefreshAnimatorProtocol
+//        var footer: ESRefreshProtocol & ESRefreshAnimatorProtocol
+//        
+//        header = ESRefreshHeaderAnimator.init(frame: CGRect.zero)
+//        footer = ESRefreshFooterAnimator.init(frame: CGRect.zero)
+        self.tableView.es_addPullToRefresh { 
+            self.refreshFeed()
         }
-        self.tableView.es_addInfiniteScrolling(animator: footer) { [weak self] in
-            self?.loadMore()
+        self.tableView.es_addInfiniteScrolling { 
+            self.loadMore()
         }
+//        self.tableView.es_addPullToRefresh(animator: header) { [weak self] in
+//            self?.refreshFeed()
+//        }
+//        self.tableView.es_addInfiniteScrolling(animator: footer) { [weak self] in
+//            self?.loadMore()
+//        }
         self.tableView.refreshIdentifier = String.init(describing: "default")
         self.tableView.expriedTimeInterval = 20.0
         
@@ -54,6 +67,9 @@ class CommentsViewController: UIViewController, UITableViewDelegate, UITableView
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
+        self.tableView.es_startPullToRefresh()
+    }
+    func clickOnTitleButton(titleButton: UIButton) {
         self.tableView.es_startPullToRefresh()
     }
     private func refreshFeed() {
@@ -84,7 +100,7 @@ class CommentsViewController: UIViewController, UITableViewDelegate, UITableView
                 })
                 self.tableView.es_stopLoadingMore()
             }else{
-                self.tableView.es_noticeNoMoreData()
+//                self.tableView.es_noticeNoMoreData()
             }
         }
     }

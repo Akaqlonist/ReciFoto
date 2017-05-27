@@ -86,6 +86,11 @@ class SettingsViewController: UIViewController, MFMailComposeViewControllerDeleg
             UIApplication.shared.open(url, options: [:])
         }
     }
+    @IBAction func davidCookieAction(_ sender: Any) {
+        if let url = URL(string: "https://click.linksynergy.com/fs-bin/click?id=4eAD/KkqgDI&offerid=260081.10001066&subid=0&type=4") {
+            UIApplication.shared.open(url, options: [:])
+        }
+    }
     @IBAction func omahaAction(_ sender: Any) {
         if let url = URL(string: "http://www.omahasteaks.com/shop/") {
             UIApplication.shared.open(url, options: [:])

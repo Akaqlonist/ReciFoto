@@ -42,7 +42,7 @@ struct Recipe {
         user.id = recipe[Constants.USER_ID_KEY] as! String
         if let picture_link = recipe[Constants.PROFILE_PICTURE_KEY] as? String
         {
-            user.avatar = picture_link
+            user.avatar = picture_link.addingPercentEncoding(withAllowedCharacters: NSCharacterSet.urlQueryAllowed)!
         }
         else {
             user.avatar = ""
@@ -52,10 +52,19 @@ struct Recipe {
         }else{
             time = 0
         }
+        imageURL = (recipe[Constants.RECIPE_IMAGE_KEY] as! String).addingPercentEncoding(withAllowedCharacters: NSCharacterSet.urlQueryAllowed)!
         
-        imageURL = recipe[Constants.RECIPE_IMAGE_KEY] as! String
+        let recipe_website_link = recipe[Constants.RECIPE_WEBSITE_KEY] as! String
+        if recipe_website_link.characters.count > 0{
+            if recipe_website_link.lowercased().hasPrefix("http"){
+                recipe_website = recipe_website_link.addingPercentEncoding(withAllowedCharacters: NSCharacterSet.urlQueryAllowed)!
+            }else{
+                recipe_website = String(format: "http://%@", recipe_website_link).addingPercentEncoding(withAllowedCharacters: NSCharacterSet.urlQueryAllowed)!
+            }
+        }else{
+            recipe_website = ""
+        }
         
-        recipe_website = recipe[Constants.RECIPE_WEBSITE_KEY] as! String
         contact_phone = recipe[Constants.CONTACT_PHONE_KEY] as! String
         have_contact = recipe[Constants.HAVE_CONTACT_KEY] as! String
         comment_count = (dict[Constants.COMMENT_COUNT_KEY] as! NSString).integerValue

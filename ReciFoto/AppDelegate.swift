@@ -63,28 +63,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // MARK: - Utilization
     func changeRootViewController(with identifier:String!) {
         let storyboard = self.window?.rootViewController?.storyboard
-        let desiredViewController = storyboard?.instantiateViewController(withIdentifier: identifier);
+        let desiredViewController = storyboard?.instantiateViewController(withIdentifier: identifier)
         
         let snapshot:UIView = (self.window?.snapshotView(afterScreenUpdates: true))!
-        desiredViewController?.view.addSubview(snapshot);
+        desiredViewController?.view.addSubview(snapshot)
         
-        self.window?.rootViewController = desiredViewController;
+        self.window?.rootViewController = desiredViewController
         
         UIView.animate(withDuration: 0.3, animations: {() in
-            snapshot.layer.opacity = 0;
-            snapshot.layer.transform = CATransform3DMakeScale(1.5, 1.5, 1.5);
+            snapshot.layer.opacity = 0
+            snapshot.layer.transform = CATransform3DMakeScale(1.5, 1.5, 1.5)
         }, completion: {
             (value: Bool) in
-            snapshot.removeFromSuperview();
+            snapshot.removeFromSuperview()
         });
     }
     func saveToUserDefaults(){
         let defaults = UserDefaults.standard
-        
-        defaults.set(Me.user.userEmail, forKey: Constants.USER_EMAIL_KEY)
+        print(Me.user)
         defaults.set(Me.user.id, forKey: Constants.USER_ID_KEY)
         defaults.set(Me.session_id, forKey: Constants.USER_SESSION_KEY)
+        defaults.set(Me.user.userEmail, forKey: Constants.USER_EMAIL_KEY)
         defaults.set(Me.user.userName, forKey: Constants.USER_NAME_KEY)
+        defaults.set(Me.user.avatar, forKey: Constants.USER_PICTURE_KEY)
+        defaults.set(Me.user.userBio, forKey: Constants.USER_BIO_KEY)
+        defaults.set(Me.user.userBirthday, forKey: Constants.USER_BIRTHDAY_KEY)
+        defaults.set(Me.user.userFullName, forKey: Constants.USER_FULL_NAME_KEY)
+        defaults.set(Me.user.userPhone, forKey: Constants.PHONE_NUM_KEY)
         
         defaults.synchronize()
     }
@@ -93,9 +98,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         Me.session_id = defaults.string(forKey: Constants.USER_SESSION_KEY)!
         Me.user = User()
-        Me.user.userName = defaults.string(forKey: Constants.USER_NAME_KEY)!
         Me.user.id = defaults.string(forKey: Constants.USER_ID_KEY)!
+        Me.user.userName = defaults.string(forKey: Constants.USER_NAME_KEY)!
         Me.user.userEmail = defaults.string(forKey: Constants.USER_EMAIL_KEY)!
+        Me.user.avatar = defaults.string(forKey: Constants.USER_PICTURE_KEY)!
+        Me.user.userBio = defaults.string(forKey: Constants.USER_BIO_KEY)!
+        Me.user.userBirthday = defaults.string(forKey: Constants.USER_BIRTHDAY_KEY)!
+        Me.user.userFullName = defaults.string(forKey: Constants.USER_FULL_NAME_KEY)!
+        Me.user.userPhone = defaults.string(forKey: Constants.PHONE_NUM_KEY)!
+        print(Me.user)
     }
     func isFirstLaunch() -> Bool {
         let launchedBefore = UserDefaults.standard.bool(forKey: Constants.LAUNCHED_BEFORE_KEY)

@@ -34,7 +34,8 @@ class CommentTableViewCell: UITableViewCell {
     }
     
     func configure(with comment: Comment) {
-        if let url = URL(string: comment.author.avatar) {
+    
+        if let url = URL(string: comment.author.avatar.addingPercentEncoding(withAllowedCharacters: NSCharacterSet.urlQueryAllowed)!) {
             let size = CGSize(width: 35, height: 35)
             avatarImage.af_setImage(
                 withURL: url,
@@ -42,6 +43,8 @@ class CommentTableViewCell: UITableViewCell {
                 filter: AspectScaledToFillSizeWithRoundedCornersFilter(size: size, radius: 0.0),
                 imageTransition: .crossDissolve(0.2)
             )
+        }else{
+            avatarImage.image = CommentTableViewCell.AvatarPlaceholder
         }
         authorLabel.text = "\(comment.author.userName)"
         commentLabel.text = comment.text

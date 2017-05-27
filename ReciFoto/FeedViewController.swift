@@ -25,7 +25,14 @@ class FeedViewController: UITableViewController {
         // self.navigationItem.rightBarButtonItem = self.editButtonItem()
         
         //Set Title
-        self.navigationItem.title = "Public Recipe List"
+//        self.navigationItem.title = "Public Recipes"
+        
+        let titleButton =  UIButton(type: .custom)
+        titleButton.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
+        titleButton.backgroundColor = UIColor.clear
+        titleButton.setTitle("Public Recipes", for: .normal)
+        titleButton.addTarget(self, action: #selector(self.clickOnTitleButton), for: .touchUpInside)
+        self.navigationItem.titleView = titleButton
         
         // Register Notification
         NotificationCenter.default.addObserver(self, selector: #selector(FeedViewController.handlePurchaseNotification(_:)),
@@ -33,17 +40,23 @@ class FeedViewController: UITableViewController {
                                                object: nil)
 
         
-        var header: ESRefreshProtocol & ESRefreshAnimatorProtocol
-        var footer: ESRefreshProtocol & ESRefreshAnimatorProtocol
-        
-        header = ESRefreshHeaderAnimator.init(frame: CGRect.zero)
-        footer = ESRefreshFooterAnimator.init(frame: CGRect.zero)
-        self.tableView.es_addPullToRefresh(animator: header) { [weak self] in
-            self?.refreshFeed()
+//        var header: ESRefreshProtocol & ESRefreshAnimatorProtocol
+//        var footer: ESRefreshProtocol & ESRefreshAnimatorProtocol
+//        
+//        header = ESRefreshHeaderAnimator.init(frame: CGRect.zero)
+//        footer = ESRefreshFooterAnimator.init(frame: CGRect.zero)
+        self.tableView.es_addPullToRefresh { 
+            self.refreshFeed()
         }
-        self.tableView.es_addInfiniteScrolling(animator: footer) { [weak self] in
-            self?.loadMore()
+//        self.tableView.es_addPullToRefresh(animator: header) { [weak self] in
+//            self?.refreshFeed()
+//        }
+        self.tableView.es_addInfiniteScrolling { 
+            self.loadMore()
         }
+//        self.tableView.es_addInfiniteScrolling(animator: footer) { [weak self] in
+//            self?.loadMore()
+//        }
         self.tableView.estimatedRowHeight = 500.0
         self.tableView.rowHeight = UITableViewAutomaticDimension
         
@@ -56,6 +69,9 @@ class FeedViewController: UITableViewController {
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    func clickOnTitleButton(titleButton: UIButton) {
+        self.tableView.es_startPullToRefresh()
     }
     private func refreshFeed() {
         DispatchQueue.main.asyncAfter(deadline: .now()) {
@@ -78,12 +94,13 @@ class FeedViewController: UITableViewController {
                 self.currentIndex += 10
                 self.feedAPIByIndex(index: self.currentIndex, didFinishedWithResult: { count in
                     if count > 0 {
+                        self.tableView.es_stopLoadingMore()
                         self.tableView.reloadData()
-                    }else{
-                        
+                    }else if count < 10{
+                        self.tableView.es_noticeNoMoreData()
                     }
                 })
-                self.tableView.es_stopLoadingMore()
+//                self.tableView.es_stopLoadingMore()
             }else{
                 self.tableView.es_noticeNoMoreData()
             }
@@ -152,7 +169,7 @@ class FeedViewController: UITableViewController {
     }
 
 }
-extension FeedViewController : DGFeedCellDelegaete{
+extension FeedViewController : DGFeedCellDelegate{
    
     func handlePurchaseNotification(_ notification: Notification) {
         guard let productID = notification.object as? String else { return }
@@ -165,56 +182,20 @@ extension FeedViewController : DGFeedCellDelegaete{
         }
     }
     func didLikeWithItem(item: Recipe) {
-        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.recipeLikeV2),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
-                                                             Constants.USER_SESSION_KEY : Me.session_id,
-                                                             Constants.RECIPE_ID_KEY : item.identifier])
-        
-        apiRequest.responseString(completionHandler: { response in
-            do{
-                print(response)
-                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                print(jsonResponse)
-                let status = jsonResponse[Constants.STATUS_KEY] as! String
-                
-                if status == "1"{
-                    print(jsonResponse)
-                }else {
-                    
-                }
-            }catch{
-                print("Error Parsing JSON from recipe_like")
-            }
-            
-        })
-        
+        NetworkManger.sharedInstance.likeAPI(parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                          Constants.USER_SESSION_KEY : Me.session_id,
+                                                          Constants.RECIPE_ID_KEY : item.identifier]) { (jsonResponse, status) in
+                                                            
+        }
     }
     func saveCollection(item: Recipe){
-        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.saveCollection),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
-                                                             Constants.USER_SESSION_KEY : Me.session_id,
-                                                             Constants.RECIPE_ID_KEY : item.identifier])
-        print(Me.user.id)
-        print(Me.session_id)
-        apiRequest.responseString(completionHandler: { response in
-            do{
-                print(response)
-                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                print(jsonResponse)
-                let status = jsonResponse[Constants.STATUS_KEY] as! String
-                
-                if status == "1"{
-                    print(jsonResponse)
-                }else {
-                    
-                }
-            }catch{
-                print("Error Parsing JSON from recipe_like")
-            }
-            
-        })
+        NetworkManger.sharedInstance.saveCollectionAPI(parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                                    Constants.USER_SESSION_KEY : Me.session_id,
+                                                                    Constants.RECIPE_ID_KEY : item.identifier]) { (jsonResponse, status) in
+                                                                        
+        }
     }
-    func didMoreWithItem(item: Recipe) {
+    func didMoreWithItem(item: Recipe, sender : UIButton) {
 
         let actionSheetController = UIAlertController(title: "ReciFoto", message: "Choose your action", preferredStyle: .actionSheet)
         
@@ -225,46 +206,40 @@ extension FeedViewController : DGFeedCellDelegaete{
         
         let saveActionButton = UIAlertAction(title: "Save to Collection", style: .default) { action -> Void in
             print("Save")
-            let product = RecifotoProducts.products[0]
-            
-            if RecifotoProducts.store.isProductPurchased(product.productIdentifier){
-                self.saveCollection(item: item)
-            }else{
-                RecifotoProducts.boughtRecipe = item
-                RecifotoProducts.store.buyProduct(product)
-            }
+            self.saveCollection(item: item)
+//            let product = RecifotoProducts.products[0]
+//            
+//            if RecifotoProducts.store.isProductPurchased(product.productIdentifier){
+//                self.saveCollection(item: item)
+//            }else{
+//                RecifotoProducts.boughtRecipe = item
+//                RecifotoProducts.store.buyProduct(product)
+//            }
         }
         actionSheetController.addAction(saveActionButton)
         
-        let reportActionButton = UIAlertAction(title: "Report Inappropriate", style: .default) { action -> Void in
-            print("Report Inappropriate")
-            let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.reportInappropriate),
-                                     method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
-                                                                 Constants.USER_SESSION_KEY : Me.session_id,
-                                                                 Constants.RECIPE_ID_KEY : item.identifier])
-            print(Me.user.id)
-            print(Me.session_id)
-            apiRequest.responseString(completionHandler: { response in
-                do{
-                    print(response)
-                    let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                    print(jsonResponse)
-                    let status = jsonResponse[Constants.STATUS_KEY] as! String
-                    
-                    if status == "1"{
-                        print(jsonResponse)
-                    }else {
-                        
-                    }
-                }catch{
-                    print("Error Parsing JSON from recipe_like")
-                }
-                
+        let reportActionButton = UIAlertAction(title: "Flag as Inappropriate", style: .default) { action -> Void in
+            print("Flag as Inappropriate")
+            NetworkManger.sharedInstance.reportRecipeAPI(parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                                      Constants.USER_SESSION_KEY : Me.session_id,
+                                                                      Constants.RECIPE_ID_KEY : item.identifier], completionHandler: { (jsonResponse, status) in
+                                                                        
             })
         }
         actionSheetController.addAction(reportActionButton)
         
-        self.present(actionSheetController, animated: true, completion: nil)
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            self.present(actionSheetController, animated: true, completion: nil)
+        }else{
+            actionSheetController.modalPresentationStyle = .popover
+            let popOver: UIPopoverPresentationController = actionSheetController.popoverPresentationController!
+            popOver.sourceView = sender
+            popOver.sourceRect = sender.bounds
+            popOver.permittedArrowDirections = .down
+            self.present(actionSheetController, animated: true, completion: {
+                
+            })
+        }
         
     }
     func didCommentWithItem(item: Recipe) {
@@ -294,5 +269,34 @@ extension FeedViewController : DGFeedCellDelegaete{
                 navigator.pushViewController(viewController, animated: true)
             }
         }
+    }
+    func didLinkClickedWithItem(item: Recipe, url: URL, sender : UIView) {
+        let actionSheetController = UIAlertController(title: "ReciFoto", message: "Choose your action", preferredStyle: .actionSheet)
+        
+        let cancelActionButton = UIAlertAction(title: "Cancel", style: .cancel) { action -> Void in
+            print("Cancel")
+        }
+        actionSheetController.addAction(cancelActionButton)
+        
+        let openActionButton = UIAlertAction(title: "Open Website", style: .default) { action -> Void in
+            UIApplication.shared.open(url, options: [:], completionHandler: { (success) in
+                
+            })
+        }
+        actionSheetController.addAction(openActionButton)
+        
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            self.present(actionSheetController, animated: true, completion: nil)
+        }else{
+            actionSheetController.modalPresentationStyle = .popover
+            let popOver: UIPopoverPresentationController = actionSheetController.popoverPresentationController!
+            popOver.sourceView = sender
+            popOver.sourceRect = sender.bounds
+            popOver.permittedArrowDirections = .up
+            self.present(actionSheetController, animated: true, completion: {
+                
+            })
+        }
+
     }
 }

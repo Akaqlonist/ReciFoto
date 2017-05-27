@@ -12,21 +12,30 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
 
     @IBOutlet weak var txtUsername: UITextField!
     @IBOutlet weak var txtPassword: UITextField!
+    @IBOutlet weak var submitView: UIView!
+    var offsetKeyboard : CGFloat = 0.0
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // Do any additional setup after loading the view.
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
-            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
-        }
+//        if UIDevice.current.userInterfaceIdiom == .phone {
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+//        }
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if UIDevice.current.userInterfaceIdiom == .phone{
+            
+        }else{
+            self.submitView.frame.origin.y = UIScreen.main.bounds.size.height - offsetKeyboard
+        }
+    }
     @IBAction func loginAction(_ sender: Any) {
         validation()
     }
@@ -46,12 +55,28 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
             self.present(alertController, animated: true, completion: nil)
         }
         else{
-            let apiCode = loginAPI()
-            if apiCode == 1{
-                
-            }else{
-                
-            }
+            let parameters : [String : String] = ["username" : txtUsername.text!,
+                                                  "password" : txtPassword.text!,
+                                                  "platform" : "ios",
+                                                  "deviceToken" : ""]
+            
+            NVActivityIndicatorPresenter.sharedInstance.startAnimating(ActivityData())
+            NetworkManger.sharedInstance.loginAPI(parameters: parameters, completionHandler: { (jsonResponse, status) in
+                if status == "1"{
+                    let appDelegate = UIApplication.shared.delegate as! AppDelegate
+                    
+                    appDelegate.setHasLoginInfo(status: true)
+                    appDelegate.saveToUserDefaults()
+                    
+                    appDelegate.changeRootViewController(with: "mainTabVC")
+                }else{
+                    let alertController = UIAlertController(title: "ReciFoto", message: jsonResponse[Constants.MESSAGE_KEY] as! String?, preferredStyle: UIAlertControllerStyle.alert)
+                    alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+                    self.present(alertController, animated: true, completion: nil)
+                }
+                NVActivityIndicatorPresenter.sharedInstance.stopAnimating()
+            })
+            
         }
     }
     func isValidEmailString() -> Bool {
@@ -75,50 +100,17 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
             return true
         }
     }
-    func loginAPI()->Int{
-        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.loginURLV2),
-                                 method: .post, parameters: ["username" : txtUsername.text!,
-                                                             "password" : txtPassword.text!,
-                                                             "platform" : "ios",
-                                                             "deviceToken" : ""])
-        
-        apiRequest.responseString(completionHandler: { response in
-            do{
-                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                let status = jsonResponse[Constants.STATUS_KEY] as! String
-                print(jsonResponse)
-                if status == "1"{
-                    let result = jsonResponse[Constants.RESULT_KEY] as! [String : AnyObject]
-                    print(result)
-                    let user = result[Constants.USER_KEY] as! NSDictionary
-                    Me.session_id = user[Constants.USER_SESSION_KEY] as! String
-                    Me.user = User(dict: user)
-                    
-                    let appDelegate = UIApplication.shared.delegate as! AppDelegate
-                    
-                    appDelegate.setHasLoginInfo(status: true)
-                    appDelegate.saveToUserDefaults()
-                    
-                    appDelegate.changeRootViewController(with: "mainTabVC")
-                }else {
-                    let alertController = UIAlertController(title: "ReciFoto", message: jsonResponse[Constants.MESSAGE_KEY] as? String, preferredStyle: UIAlertControllerStyle.alert)
-                    alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
-                    self.present(alertController, animated: true, completion: nil)
-                }
-            }catch{
-                print("Error Parsing JSON from login_user_v2")
-            }
-            
-        })
-        
-        return 1;
-    }
     //Mark: - Animation
     func keyboardWillShow(notification: NSNotification) {
-        
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
-            if self.view.frame.origin.y == 0{
-                self.view.frame.origin.y -= keyboardSize.height
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                if self.view.frame.origin.y == 0{
+                    self.view.frame.origin.y -= keyboardSize.height
+                }
+            }else{
+                let submitTopY = UIScreen.main.bounds.size.height - self.submitView.frame.size.height - keyboardSize.height
+                self.submitView.frame.origin.y = submitTopY
+                self.offsetKeyboard = self.submitView.frame.size.height + keyboardSize.height
             }
         }
         
@@ -126,8 +118,16 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
     
     func keyboardWillHide(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
-            if self.view.frame.origin.y != 0{
-                self.view.frame.origin.y += keyboardSize.height
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                if self.view.frame.origin.y != 0{
+                    self.view.frame.origin.y += keyboardSize.height
+                }
+            }else{
+                self.offsetKeyboard = self.submitView.frame.size.height
+                let submitTopY = UIScreen.main.bounds.size.height - self.submitView.frame.size.height
+                if self.submitView.frame.origin.y != submitTopY{
+                    self.submitView.frame.origin.y += keyboardSize.height
+                }
             }
         }
     }

@@ -15,19 +15,21 @@ class CameraViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var txtRecipeName: UITextField!
     @IBOutlet weak var txtWebsite: UITextField!
     @IBOutlet weak var imageView: UIImageView!
-    let pkcCrop = PKCCrop()
+    @IBOutlet weak var btnAddCamera: UIButton!
+//    let pkcCrop = PKCCrop()
+    @IBOutlet weak var addImageLabel: UILabel!
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
         self.navigationItem.title = "Add a Recipe"
-        self.pkcCrop.delegate = self
+//        self.pkcCrop.delegate = self
         
         
-        let _ = PKCCropManager.shared.setRate(rateWidth: 16, rateHeight: 16)
-        PKCCropManager.shared.cropType = .rateAndRotate
-        PKCCropManager.shared.isZoomAnimation = false
-        PKCCropManager.shared.isZoom = false
+//        let _ = PKCCropManager.shared.setRate(rateWidth: 16, rateHeight: 16)
+//        PKCCropManager.shared.cropType = .rateAndRotate
+//        PKCCropManager.shared.isZoomAnimation = false
+//        PKCCropManager.shared.isZoom = false
     }
 
     override func didReceiveMemoryWarning() {
@@ -35,9 +37,39 @@ class CameraViewController: UIViewController, UITextFieldDelegate {
         // Dispose of any resources that can be recreated.
     }
     
-    @IBAction func cameraAction(_ sender: Any) {
-        self.pkcCrop.cameraCrop()
+    @IBAction func cameraAction(_ sender: UIButton) {
         self.imageView.image = nil
+        let actionSheetController = UIAlertController(title: "ReciFoto", message: "Choose your action", preferredStyle: .actionSheet)
+        
+        let cancelActionButton = UIAlertAction(title: "Cancel", style: .cancel) { action -> Void in
+            print("Cancel")
+        }
+        actionSheetController.addAction(cancelActionButton)
+        
+        let cameraActionButton = UIAlertAction(title: "Camera", style: .default) { action -> Void in
+//            self.pkcCrop.cameraCrop()
+            self.presentImagePicker(sourceType: .camera)
+        }
+        actionSheetController.addAction(cameraActionButton)
+        
+        let albumActionButton = UIAlertAction(title: "Album", style: .default) { action -> Void in
+            self.presentImagePicker(sourceType: .photoLibrary)
+        }
+        actionSheetController.addAction(albumActionButton)
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            self.present(actionSheetController, animated: true, completion: nil)
+        }else{
+            actionSheetController.modalPresentationStyle = .popover
+            let popOver: UIPopoverPresentationController = actionSheetController.popoverPresentationController!
+            popOver.sourceView = self.addImageLabel
+            popOver.sourceRect = self.addImageLabel.bounds
+            popOver.permittedArrowDirections = .down
+
+            self.present(actionSheetController, animated: true, completion: { 
+                
+            })
+        }
+        
     }
     @IBAction func publishAction(_ sender: Any) {
         validation()
@@ -49,6 +81,22 @@ class CameraViewController: UIViewController, UITextFieldDelegate {
     @IBAction func offAction(_ sender: Any) {
         self.btnOn.isSelected = false
         self.btnOff.isSelected = true
+    }
+    private func presentImagePicker(sourceType : UIImagePickerControllerSourceType) {
+        let picker = UIImagePickerController()
+        picker.delegate = self
+        picker.sourceType = sourceType
+        
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            if sourceType == .photoLibrary{
+                picker.allowsEditing = false
+            }else{
+                picker.allowsEditing = true
+            }
+        } else {
+            picker.allowsEditing = true
+        }
+        present(picker, animated: true, completion: nil)
     }
     func validation(){
         let alertController = UIAlertController(title: "ReciFoto", message: "", preferredStyle: UIAlertControllerStyle.alert)
@@ -74,14 +122,10 @@ class CameraViewController: UIViewController, UITextFieldDelegate {
         }
     }
     func uploadToServer() -> Int{
-//        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.upload_recipeV2),
-//                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
-//                                                             Constants.USER_SESSION_KEY : Me.session_id,
-//                                                             Constants.RECIPE_TITLE_KEY : self.txtRecipeName.text!,
-//                                                             Constants.CONTACT_WEBSITE_KEY : self.txtWebsite.text!])
+        NVActivityIndicatorPresenter.sharedInstance.startAnimating(ActivityData())
         let uploadAPIURLConvertable = String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.upload_recipeV2)
         upload(multipartFormData: { multipartFormData in
-            multipartFormData.append(UIImagePNGRepresentation(self.imageView.image!)!, withName: "file", fileName: "file.png", mimeType: "image/png")
+            multipartFormData.append(UIImageJPEGRepresentation(self.imageView.image!, 1.0)!, withName: "file", fileName: "file.png", mimeType: "image/png")
             multipartFormData.append(Me.user.id.data(using: .utf8)!, withName: Constants.USER_ID_KEY)
             multipartFormData.append(Me.session_id.data(using: .utf8)!, withName: Constants.USER_SESSION_KEY)
             multipartFormData.append((self.txtRecipeName.text?.data(using: .utf8)!)!, withName: Constants.RECIPE_TITLE_KEY)
@@ -98,11 +142,15 @@ class CameraViewController: UIViewController, UITextFieldDelegate {
                     if let JSON = response.result.value {
                         print("JSON: \(JSON)")
                     }
+                    NVActivityIndicatorPresenter.sharedInstance.stopAnimating()
                 }
                 self.resetContent()
+                
             case .failure(let encodingError):
+                NVActivityIndicatorPresenter.sharedInstance.stopAnimating()
                 print("error:\(encodingError)")
             }
+            
         }
         
         return 1
@@ -128,19 +176,78 @@ class CameraViewController: UIViewController, UITextFieldDelegate {
         return true
     }
 }
-extension CameraViewController: PKCCropDelegate{
-    func pkcCropAccessPermissionsChange() -> Bool {
-        return true
+//extension CameraViewController: PKCCropDelegate{
+//    func pkcCropAccessPermissionsChange() -> Bool {
+//        return true
+//    }
+//    func pkcCropAccessPermissionsDenied() {
+//        
+//    }
+//    
+//    func pkcCropController() -> UIViewController {
+//        return self
+//    }
+//    
+//    func pkcCropImage(_ image: UIImage) {
+//        self.imageView.image = image
+//    }
+//}
+extension CameraViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+        picker.dismiss(animated: true) {
+            
+        }
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            if picker.sourceType == .photoLibrary{
+                var image = info[UIImagePickerControllerOriginalImage] as! UIImage
+                image = image.cropTo(size: self.imageView.frame.size)
+                self.imageView.image = image
+            }else{
+                let image = info[UIImagePickerControllerEditedImage]
+                self.imageView.image = image as! UIImage?
+            }
+        } else {
+            let image = info[UIImagePickerControllerEditedImage]
+            self.imageView.image = image as! UIImage?
+        }
     }
-    func pkcCropAccessPermissionsDenied() {
+}
+extension UIImage {
+    func cropTo(size: CGSize) -> UIImage {
+        guard let cgimage = self.cgImage else { return self }
         
-    }
-    
-    func pkcCropController() -> UIViewController {
-        return self
-    }
-    
-    func pkcCropImage(_ image: UIImage) {
-        self.imageView.image = image
+        let contextImage: UIImage = UIImage(cgImage: cgimage)
+        
+        var cropWidth: CGFloat = size.width
+        var cropHeight: CGFloat = size.height
+        
+        if (self.size.height < size.height || self.size.width < size.width){
+            return self
+        }
+        
+        let heightPercentage = self.size.height/size.height
+        let widthPercentage = self.size.width/size.width
+        
+        if (heightPercentage < widthPercentage) {
+            cropHeight = size.height*heightPercentage
+            cropWidth = size.width*heightPercentage
+        } else {
+            cropHeight = size.height*widthPercentage
+            cropWidth = size.width*widthPercentage
+        }
+        
+        let posX: CGFloat = (self.size.width - cropWidth)/2
+        let posY: CGFloat = (self.size.height - cropHeight)/2
+        
+        let rect: CGRect = CGRect(x: posX, y: posY, width: cropWidth, height: cropHeight)
+        
+        // Create bitmap image from context using the rect
+        let imageRef: CGImage = contextImage.cgImage!.cropping(to: rect)!
+        
+        // Create a new image based on the imageRef and rotate back to the original orientation
+        let cropped: UIImage = UIImage(cgImage: imageRef, scale: self.scale, orientation: self.imageOrientation)
+        
+        return cropped
     }
 }

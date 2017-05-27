@@ -17,17 +17,26 @@ class RegisterViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var txtPassword: UITextField!
     @IBOutlet weak var txtConfirmPassword: UITextField!
     @IBOutlet weak var btnTermsAndPolicy: UIButton!
+    @IBOutlet weak var submitView: UIView!
+    var offsetKeyboard : CGFloat = 0.0
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
-            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
-        }
+//        if UIDevice.current.userInterfaceIdiom == .phone {
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+//        }
 
     }
-
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if UIDevice.current.userInterfaceIdiom == .phone{
+            
+        }else{
+            self.submitView.frame.origin.y = UIScreen.main.bounds.size.height - offsetKeyboard
+        }
+    }
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -75,18 +84,28 @@ class RegisterViewController: UIViewController, UITextFieldDelegate {
             self.present(alertController, animated: true, completion: nil)
         }
         else{
-            let apiCode = registerAPI()
-            if apiCode == 1{
-                
-            }else{
-                
-            }
+            NVActivityIndicatorPresenter.sharedInstance.startAnimating(ActivityData())
+            NetworkManger.sharedInstance.registerAPI(parameters: ["username" : txtUsername.text!,
+                                                                  "email" : txtEmail.text!,
+                                                                  "password" : txtPassword.text!], completionHandler: { (jsonResponse, status) in
+                if status == "1"{
+                    let appDelegate = UIApplication.shared.delegate as! AppDelegate
+                    
+                    appDelegate.setHasLoginInfo(status: true)
+                    appDelegate.saveToUserDefaults()
+                    
+                    appDelegate.changeRootViewController(with: "mainTabVC")
+                }else{
+                    let alertController = UIAlertController(title: "ReciFoto", message: jsonResponse[Constants.MESSAGE_KEY] as! String?, preferredStyle: UIAlertControllerStyle.alert)
+                    alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+                    self.present(alertController, animated: true, completion: nil)
+                }
+                NVActivityIndicatorPresenter.sharedInstance.stopAnimating()
+            })
+            
         }
     }
     func isValidEmailString() -> Bool {
-//        let regEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}"
-//        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", regEx)
-//        return emailPredicate.evaluate(with: txtEmail.text)
         let characterset = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLKMNOPQRSTUVWXYZ0123456789@.")
         if txtEmail.text?.rangeOfCharacter(from: characterset.inverted) != nil {
             return false
@@ -107,43 +126,16 @@ class RegisterViewController: UIViewController, UITextFieldDelegate {
             return true
         }
     }
-    func registerAPI()->Int{
-        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.registerURLV2), method: .post, parameters: ["username" : txtUsername.text!, "email" : txtEmail.text!, "password" : txtPassword.text!])
-        
-        apiRequest.responseString(completionHandler: { response in
-            do{
-                
-                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                let status = jsonResponse[Constants.STATUS_KEY] as! String
-                
-                if status == "1"{
-                    Me.user.id = String(describing: jsonResponse[Constants.USER_ID_KEY] as! Int)
-                    Me.session_id = jsonResponse[Constants.USER_SESSION_KEY] as! String
-                
-                    let appDelegate = UIApplication.shared.delegate as! AppDelegate
-                    
-                    appDelegate.setHasLoginInfo(status: true)
-                    appDelegate.saveToUserDefaults()
-                    
-                    appDelegate.changeRootViewController(with: "mainTabVC")
-                }else{
-                    let alertController = UIAlertController(title: "ReciFoto", message: jsonResponse[Constants.MESSAGE_KEY] as! String?, preferredStyle: UIAlertControllerStyle.alert)
-                    alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
-                    self.present(alertController, animated: true, completion: nil)
-                }
-            }catch{
-                print("Error Parsing JSON from register_user_v2")
-            }
-            
-        })
-
-        return 1;
-    }
     func keyboardWillShow(notification: NSNotification) {
-        
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
-            if self.view.frame.origin.y == 0{
-                self.view.frame.origin.y -= keyboardSize.height
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                if self.view.frame.origin.y == 0{
+                    self.view.frame.origin.y -= keyboardSize.height
+                }
+            }else{
+                let submitTopY = UIScreen.main.bounds.size.height - self.submitView.frame.size.height - keyboardSize.height
+                self.submitView.frame.origin.y = submitTopY
+                self.offsetKeyboard = self.submitView.frame.size.height + keyboardSize.height
             }
         }
         
@@ -151,8 +143,16 @@ class RegisterViewController: UIViewController, UITextFieldDelegate {
     
     func keyboardWillHide(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
-            if self.view.frame.origin.y != 0{
-                self.view.frame.origin.y += keyboardSize.height
+            if UIDevice.current.userInterfaceIdiom == .phone {
+                if self.view.frame.origin.y != 0{
+                    self.view.frame.origin.y += keyboardSize.height
+                }
+            }else{
+                self.offsetKeyboard = self.submitView.frame.size.height
+                let submitTopY = UIScreen.main.bounds.size.height - self.submitView.frame.size.height
+                if self.submitView.frame.origin.y != submitTopY{
+                    self.submitView.frame.origin.y += keyboardSize.height
+                }
             }
         }
     }

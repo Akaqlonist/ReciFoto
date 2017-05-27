@@ -16,7 +16,13 @@ class ActivityViewController: UITableViewController {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
-        self.navigationItem.title = "My Recipes"
+//        self.navigationItem.title = "My Recipes"
+        let titleButton =  UIButton(type: .custom)
+        titleButton.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
+        titleButton.backgroundColor = UIColor.clear
+        titleButton.setTitle("My Recipes", for: .normal)
+        titleButton.addTarget(self, action: #selector(self.clickOnTitleButton), for: .touchUpInside)
+        self.navigationItem.titleView = titleButton
         
         let settingButton = UIBarButtonItem(barButtonSystemItem: .bookmarks, target: self, action: #selector(ActivityViewController.collectionAction))
         self.navigationItem.rightBarButtonItem = settingButton
@@ -44,6 +50,9 @@ class ActivityViewController: UITableViewController {
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    func clickOnTitleButton(titleButton: UIButton) {
+        self.tableView.es_startPullToRefresh()
     }
     func collectionAction(){
         if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "myCollectionVC") as? CollectionsViewController {
@@ -89,11 +98,12 @@ class ActivityViewController: UITableViewController {
         let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.getUserRecipesV2),
                                  method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
                                                              Constants.USER_SESSION_KEY : Me.session_id,
-                                                             Constants.USER_NAME_KEY: Me.user.userName,
+                                                             Constants.TOUSERID_KEY: Me.user.id,
                                                              Constants.INDEX_KEY : index])
         
         apiRequest.responseString(completionHandler: { response in
             do{
+                print(response)
                 let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
                 let status = jsonResponse[Constants.STATUS_KEY] as! String
                 
@@ -147,59 +157,24 @@ class ActivityViewController: UITableViewController {
     */
 
 }
-extension ActivityViewController : DGFeedCellDelegaete{
+extension ActivityViewController : DGFeedCellDelegate{
 
     func didLikeWithItem(item: Recipe) {
-        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.recipeLikeV2),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
-                                                             Constants.USER_SESSION_KEY : Me.session_id,
-                                                             Constants.RECIPE_ID_KEY : item.identifier])
-        
-        apiRequest.responseString(completionHandler: { response in
-            do{
-                print(response)
-                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                let status = jsonResponse[Constants.STATUS_KEY] as! String
-                
-                if status == "1"{
-                    print(jsonResponse)
-                }else {
-                    
-                }
-            }catch{
-                print("Error Parsing JSON from recipe_like")
-            }
+        NetworkManger.sharedInstance.likeAPI(parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                          Constants.USER_SESSION_KEY : Me.session_id,
+                                                          Constants.RECIPE_ID_KEY : item.identifier]) { (jsonResponse, status) in
             
-        })
-        
+        }
     }
     func saveCollection(item: Recipe){
-        let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.saveCollection),
-                                 method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
-                                                             Constants.USER_SESSION_KEY : Me.session_id,
-                                                             Constants.RECIPE_ID_KEY : item.identifier])
-        print(Me.user.id)
-        print(Me.session_id)
-        apiRequest.responseString(completionHandler: { response in
-            do{
-                print(response)
-                let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                print(jsonResponse)
-                let status = jsonResponse[Constants.STATUS_KEY] as! String
-                
-                if status == "1"{
-                    print(jsonResponse)
-                }else {
-                    
-                }
-            }catch{
-                print("Error Parsing JSON from recipe_like")
-            }
-            
-        })
+        NetworkManger.sharedInstance.saveCollectionAPI(parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                                    Constants.USER_SESSION_KEY : Me.session_id,
+                                                                    Constants.RECIPE_ID_KEY : item.identifier]) { (jsonResponse, status) in
+                                                                        
+        }
     }
 
-    func didMoreWithItem(item: Recipe) {
+    func didMoreWithItem(item: Recipe, sender : UIButton) {
         let actionSheetController = UIAlertController(title: "ReciFoto", message: "", preferredStyle: .actionSheet)
         
         let cancelActionButton = UIAlertAction(title: "Cancel", style: .cancel) { action -> Void in
@@ -209,48 +184,65 @@ extension ActivityViewController : DGFeedCellDelegaete{
         
         let saveActionButton = UIAlertAction(title: "Save to Collection", style: .default) { action -> Void in
             print("Save")
-            let product = RecifotoProducts.products[0]
-            
-            if RecifotoProducts.store.isProductPurchased(product.productIdentifier){
-                self.saveCollection(item: item)
-            }else{
-                RecifotoProducts.boughtRecipe = item
-                RecifotoProducts.store.buyProduct(product)
-            }
+            self.saveCollection(item: item)
+//            let product = RecifotoProducts.products[0]
+//            
+//            if RecifotoProducts.store.isProductPurchased(product.productIdentifier){
+//                self.saveCollection(item: item)
+//            }else{
+//                RecifotoProducts.boughtRecipe = item
+//                RecifotoProducts.store.buyProduct(product)
+//            }
         }
         actionSheetController.addAction(saveActionButton)
         
-        let reportActionButton = UIAlertAction(title: "Report Inappropriate", style: .default) { action -> Void in
-            print("Report Inappropriate")
-            let apiRequest = request(String(format:"%@%@",Constants.API_URL_DEVELOPMENT,Constants.reportInappropriate),
-                                     method: .post, parameters: [Constants.USER_ID_KEY : Me.user.id,
-                                                                 Constants.USER_SESSION_KEY : Me.session_id,
-                                                                 Constants.RECIPE_ID_KEY : item.identifier])
-            print(Me.user.id)
-            print(Me.session_id)
-            apiRequest.responseString(completionHandler: { response in
-                do{
-                    print(response)
-                    let jsonResponse = try JSONSerialization.jsonObject(with: response.data!, options: []) as! [String : Any]
-                    print(jsonResponse)
-                    let status = jsonResponse[Constants.STATUS_KEY] as! String
-                    
-                    if status == "1"{
-                        print(jsonResponse)
-                    }else {
-                        
-                    }
-                }catch{
-                    print("Error Parsing JSON from recipe_like")
-                }
-                
+        let reportActionButton = UIAlertAction(title: "Flag as Inappropriate", style: .default) { action -> Void in
+            print("Flag as Inappropriate")
+            NetworkManger.sharedInstance.reportRecipeAPI(parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                                      Constants.USER_SESSION_KEY : Me.session_id,
+                                                                      Constants.RECIPE_ID_KEY : item.identifier], completionHandler: { (jsonResponse, status) in
+                                                                        
             })
         }
 
         actionSheetController.addAction(reportActionButton)
+        let deleteActionButton = UIAlertAction(title: "Delete Recipe", style: .default) { action -> Void in
+            print("Delete Recipe")
+            NetworkManger.sharedInstance.deleteRecipeAPI(parameters: [Constants.USER_ID_KEY : Me.user.id,
+                                                                      Constants.USER_SESSION_KEY : Me.session_id,
+                                                                      Constants.RECIPE_ID_KEY : item.identifier], completionHandler: { (jsonResponse, status) in
+                if status == "1"{
+                    let index = self.getIndexFromItem(item: item)
+                    if index != -1{
+                        self.feedList.remove(at: index)
+                        self.tableView.reloadData()
+                    }
+                }
+            })
+        }
         
-        self.present(actionSheetController, animated: true, completion: nil)
+        actionSheetController.addAction(deleteActionButton)
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            self.present(actionSheetController, animated: true, completion: nil)
+        }else{
+            actionSheetController.modalPresentationStyle = .popover
+            let popOver: UIPopoverPresentationController = actionSheetController.popoverPresentationController!
+            popOver.sourceView = sender
+            popOver.sourceRect = sender.bounds
+            popOver.permittedArrowDirections = .down
+            self.present(actionSheetController, animated: true, completion: {
+                
+            })
+        }
         
+    }
+    func getIndexFromItem(item: Recipe)->Int{
+        for (index, name) in self.feedList.enumerated() {
+            if name.identifier == item.identifier{
+                return index
+            }
+        }
+        return -1
     }
     func didCommentWithItem(item: Recipe) {
         if let viewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "commentsVC") as? CommentsViewController {
@@ -275,6 +267,34 @@ extension ActivityViewController : DGFeedCellDelegaete{
                 navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
                 navigator.pushViewController(viewController, animated: true)
             }
+        }
+    }
+    func didLinkClickedWithItem(item: Recipe, url: URL, sender : UIView) {
+        let actionSheetController = UIAlertController(title: "ReciFoto", message: "Choose your action", preferredStyle: .actionSheet)
+        
+        let cancelActionButton = UIAlertAction(title: "Cancel", style: .cancel) { action -> Void in
+            print("Cancel")
+        }
+        actionSheetController.addAction(cancelActionButton)
+        
+        let openActionButton = UIAlertAction(title: "Open Website", style: .default) { action -> Void in
+            UIApplication.shared.open(url, options: [:], completionHandler: { (success) in
+                
+            })
+        }
+        actionSheetController.addAction(openActionButton)
+        
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            self.present(actionSheetController, animated: true, completion: nil)
+        }else{
+            actionSheetController.modalPresentationStyle = .popover
+            let popOver: UIPopoverPresentationController = actionSheetController.popoverPresentationController!
+            popOver.sourceView = sender
+            popOver.sourceRect = sender.bounds
+            popOver.permittedArrowDirections = .up
+            self.present(actionSheetController, animated: true, completion: {
+                
+            })
         }
     }
 }

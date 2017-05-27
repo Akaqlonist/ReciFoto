@@ -487,11 +487,11 @@ open class ESRefreshFooterView: ESRefreshComponent {
         self.animator.refreshAnimationEnd(view: self)
         
         // Back state
-        UIView.animate(withDuration: 0.3, delay: 0, options: .curveLinear, animations: {
-        }, completion: { (finished) in
+//        UIView.animate(withDuration: 0.3, delay: 0, options: .curveLinear, animations: {
+//        }, completion: { (finished) in
             self.animator.refresh(view: self, stateDidChange: .pullToRefresh)
             super.stop()
-        })
+//        })
 
         // Stop deceleration of UIScrollView. When the button tap event is caught, you read what the [scrollView contentOffset].x is, and set the offset to this value with animation OFF.
         // http://stackoverflow.com/questions/2037892/stop-deceleration-of-uiscrollview

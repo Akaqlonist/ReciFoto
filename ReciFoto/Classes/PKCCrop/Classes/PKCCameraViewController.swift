@@ -194,21 +194,21 @@ class PKCCameraViewController: UIViewController{
     //Filter button When you touch the filter View View
     //필터버튼 터치하면 필터View 보임
     @IBAction func filterAction(_ sender: Any) {
-        UIView.animate(withDuration: 0.5) { 
-            self.filterRight.constant = 0
-            self.noneCaptureView.layoutIfNeeded()
-            self.noneCaptureView.setNeedsLayout()
-        }
+//        UIView.animate(withDuration: 0.5) { 
+//            self.filterRight.constant = 0
+//            self.noneCaptureView.layoutIfNeeded()
+//            self.noneCaptureView.setNeedsLayout()
+//        }
     }
     
     //<< Touch disappears when you touch the filter
     //<< 터치하면 필터View 사라짐
     @IBAction func filterCloseAction(_ sender: Any) {
-        UIView.animate(withDuration: 0.5) {
-            self.filterRight.constant = -100
-            self.noneCaptureView.layoutIfNeeded()
-            self.noneCaptureView.setNeedsLayout()
-        }
+//        UIView.animate(withDuration: 0.5) {
+//            self.filterRight.constant = -100
+//            self.noneCaptureView.layoutIfNeeded()
+//            self.noneCaptureView.setNeedsLayout()
+//        }
     }
     
     //Filter View PanGesture

@@ -17,8 +17,13 @@ class CollectionsViewController: UICollectionViewController, UICollectionViewDel
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        self.navigationItem.title = "My Collection"
-        
+//        self.navigationItem.title = "My Collection"
+        let titleButton =  UIButton(type: .custom)
+        titleButton.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
+        titleButton.backgroundColor = UIColor.clear
+        titleButton.setTitle("My Collection", for: .normal)
+        titleButton.addTarget(self, action: #selector(self.clickOnTitleButton), for: .touchUpInside)
+        self.navigationItem.titleView = titleButton
         
         self.collectionView?.es_addPullToRefresh {
             self.refreshFeed()
@@ -33,7 +38,11 @@ class CollectionsViewController: UICollectionViewController, UICollectionViewDel
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
+    func clickOnTitleButton(titleButton: UIButton) {
+        self.collectionView?.scrollToItem(at: IndexPath(row: 0, section: 0),
+                                          at: .top,
+                                          animated: true)
+    }
     private func refreshFeed() {
         DispatchQueue.main.asyncAfter(deadline: .now()) {
             self.feedList.removeAll()
@@ -119,7 +128,7 @@ class CollectionsViewController: UICollectionViewController, UICollectionViewDel
         if let cell = cell as? CollectionCell {
         
             let item = self.feedList[indexPath.row]
-            cell.imageView.af_setImage(withURL: URL(string: item.imageURL)!)
+            cell.imageView.af_setImage(withURL: URL(string: item.imageURL.addingPercentEncoding(withAllowedCharacters: NSCharacterSet.urlQueryAllowed)!)!)
         }
         return cell
     }
